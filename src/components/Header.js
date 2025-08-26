@@ -1,9 +1,28 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { isAuthenticated, getUser } from "../utils/auth"
 
 const Header = () => {
   const [isOffcanvasOpen, setIsOffcanvasOpen] = useState(false)
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [user, setUser] = useState(null)
+
+  useEffect(() => {
+    const checkAuth = () => {
+      const authStatus = isAuthenticated()
+      setIsLoggedIn(authStatus)
+      if (authStatus) {
+        setUser(getUser())
+      }
+    }
+
+    checkAuth()
+
+    // Listen for storage changes to update auth state
+    window.addEventListener("storage", checkAuth)
+    return () => window.removeEventListener("storage", checkAuth)
+  }, [])
 
   const toggleOffcanvas = () => {
     setIsOffcanvasOpen(!isOffcanvasOpen)
@@ -40,17 +59,17 @@ const Header = () => {
               </div>
               <div className="offcanvas-body">
                 <ul className="navbar-nav justify-content-center flex-grow-1">
-                  <li className="nav-item">
+                  {/* <li className="nav-item">
                     <a className="nav-link" href="/">
                       Home
                     </a>
-                  </li>
+                  </li> */}
                   <li className="nav-item">
                     <a className="nav-link" href="/about">
                       About Us
                     </a>
                   </li>
-                  <li className="nav-item">
+                  {/* <li className="nav-item">
                     <a className="nav-link" href="/ai-compliance">
                       AI Compliance
                     </a>
@@ -59,7 +78,7 @@ const Header = () => {
                     <a className="nav-link" href="/audit-compliance">
                       Audit Compliance
                     </a>
-                  </li>
+                  </li> */}
                   <li className="nav-item">
                     <a className="nav-link" href="/terms">
                       Terms & Condition
@@ -77,16 +96,27 @@ const Header = () => {
                   </li>
                 </ul>
                 <div className="nav-right">
-                  <div className="nav-btn">
-                    <a href="/login" className="btn btn-default">
-                      Login
-                    </a>
-                  </div>
-                  <div className="nav-btn">
-                    <a href="/signup" className="theme-btn">
-                      Sign Up
-                    </a>
-                  </div>
+                  {!isLoggedIn ? (
+                    <>
+                      <div className="nav-btn">
+                        <a href="/login" className="btn btn-default">
+                          Login
+                        </a>
+                      </div>
+                      <div className="nav-btn">
+                        <a href="/signup" className="theme-btn">
+                          Sign Up
+                        </a>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="nav-btn">
+                      <span className="text-white me-3">Welcome, {user?.name}</span>
+                      <a href="/ai-compliance" className="theme-btn">
+                        Dashboard
+                      </a>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

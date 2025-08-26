@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import Preloader from "../components/Preloader"
+import ChatInput from "../components/ChatInput"
 
 const RiskManagementChat = () => {
   const navigate = useNavigate()
@@ -136,9 +137,9 @@ const RiskManagementChat = () => {
               <button className="coin theme-btn">50 Coin</button>
               <i className="fas fa-bell icon"></i>
               <img src="assets/img/Avatar.png" className="rounded-circle" alt="User" />
-              <button className="btn btn-sm btn-outline-dark" id="modeToggle" onClick={toggleDarkMode}>
+              {/* <button className="btn btn-sm btn-outline-dark" id="modeToggle" onClick={toggleDarkMode}>
                 🌓
-              </button>
+              </button> */}
             </div>
           </div>
 
@@ -183,20 +184,7 @@ const RiskManagementChat = () => {
           </div>
         </div>
 
-        <div className="chat-input">
-          <form onSubmit={handleSendMessage} className="d-flex align-items-center">
-            <input
-              type="text"
-              placeholder="Type to ask our ai.."
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-            />
-            <i className="fas fa-paperclip"></i>
-            <button type="submit">
-              <i className="fa fa-paper-plane text-white"></i>
-            </button>
-          </form>
-        </div>
+   <ChatInput/>
       </main>
     </div>
   )

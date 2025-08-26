@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import Preloader from "../components/Preloader"
 import ChatInput from "../components/ChatInput"
+import Sidebar from "../components/Sidebar"
 
 const Chat = () => {
   const navigate = useNavigate()
@@ -70,57 +71,7 @@ const Chat = () => {
 
       <main className="main">
         {/* Sidebar */}
-        <div
-          className={`sidebar ${isSidebarCollapsed ? "collapsed" : ""} ${isDarkMode ? "dark-mode" : ""}`}
-          id="sidebar"
-        >
-          <div className="logo">
-            <img src="assets/img/logo/logo.png" alt="logo" />
-          </div>
-          <div className="d-flex justify-content-between">
-            <button className="theme-btn mb-3 w-100 btn btn-primary me-2">+ New Chat</button>
-            <a>
-              <img src="assets/img/search.png" alt="search" />
-            </a>
-          </div>
-
-          <ul className="chat-list">
-            <li>
-              <img src="assets/img/chaticon.png" style={{ width: "20px", marginRight: "10px" }} alt="" /> What is posh
-              policy?
-            </li>
-            <li>
-              <img src="assets/img/chaticon.png" style={{ width: "20px", marginRight: "10px" }} alt="" /> What is
-              sandwich rule?
-            </li>
-            <li className="active">
-              <img src="assets/img/chaticon.png" style={{ width: "20px", marginRight: "10px" }} alt="" /> Salary date?
-              <span className="trashed">
-                <i className="fa fa-trash text-white"></i>
-              </span>
-            </li>
-          </ul>
-
-          <div className="mt-4 text-muted small">Yesterday</div>
-          <ul className="chat-list">
-            <li>
-              <img src="assets/img/chaticon.png" style={{ width: "20px", marginRight: "10px" }} alt="" /> What's in your
-              mind?
-            </li>
-            <li>
-              <img src="assets/img/chaticon.png" style={{ width: "20px", marginRight: "10px" }} alt="" /> What's in your
-              mind?
-            </li>
-            <li>
-              <img src="assets/img/chaticon.png" style={{ width: "20px", marginRight: "10px" }} alt="" /> What's in your
-              mind?
-            </li>
-          </ul>
-
-          <button onClick={handleLogout} className="btn logout-btn mt-4">
-            <i className="fas fa-sign-out-alt me-2"></i> Log Out
-          </button>
-        </div>
+<Sidebar/>
 
         {/* Main Area */}
         <div className="main2">
@@ -135,9 +86,9 @@ const Chat = () => {
               <button className="coin theme-btn">50 Coin</button>
               <i className="fas fa-bell icon"></i>
               <img src="assets/img/Avatar.png" className="rounded-circle" alt="User" />
-              <button className="btn btn-sm btn-outline-dark" id="modeToggle" onClick={toggleDarkMode}>
+              {/* <button className="btn btn-sm btn-outline-dark" id="modeToggle" onClick={toggleDarkMode}>
                 🌓
-              </button>
+              </button> */}
             </div>
           </div>
 

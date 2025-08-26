@@ -13,9 +13,9 @@ const TopBar = ({ onSidebarToggle, onModeToggle }) => {
         <button className="coin theme-btn">50 Coin</button>
         <i className="fas fa-bell icon"></i>
         <img src="assets/img/Avatar.png" className="rounded-circle" alt="User" />
-        <button className="btn btn-sm btn-outline-dark" onClick={onModeToggle}>
-          🌓
-        </button>
+        {/* <button className="btn btn-sm btn-outline-dark" onClick={onModeToggle}>
+           🌓
+        </button> */}
       </div>
     </div>
   )

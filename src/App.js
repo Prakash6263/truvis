@@ -18,31 +18,133 @@ import RiskManagementStep3 from "./pages/RiskManagementStep3"
 import RiskManagementStep2 from "./pages/RiskManagementStep2"
 import RiskManagementFinal from "./pages/RiskManagementFinal"
 import RiskManagementChat from "./pages/RiskManagementChat"
+import ProtectedRoute from "./components/ProtectedRoute"
+import AuthRoute from "./components/AuthRoute"
 
 function App() {
   return (
     <Router>
       <div className="App">
         <Routes>
+          {/* Public routes */}
           <Route path="/" element={<Home />} />
           <Route path="/about" element={<About />} />
-          <Route path="/ai-compliance" element={<AICompliance />} />
-          <Route path="/audit-compliance" element={<AuditCompliance />} />
-          <Route path="/audit-compliance-step1" element={<AuditComplianceStep1 />} />
-          <Route path="/audit-compliance-step2" element={<AuditComplianceStep2 />} />
-          <Route path="/audit-compliance-step3" element={<AuditComplianceStep3 />} />
-          <Route path="/audit-compliance-step4" element={<AuditComplianceStep4 />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/signup" element={<Signup />} />
-          <Route path="/chat" element={<Chat />} />
+          <Route
+            path="/login"
+            element={
+              <AuthRoute>
+                <Login />
+              </AuthRoute>
+            }
+          />
+          {/* <Route
+            path="/register"
+            element={
+              <AuthRoute>
+                <Register />
+              </AuthRoute>
+            }
+          /> */}
+          <Route
+            path="/signup"
+            element={
+              <AuthRoute>
+                <Signup />
+              </AuthRoute>
+            }
+          />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/disclaimer" element={<Disclaimer />} />
           <Route path="/terms" element={<Terms />} />
-          <Route path="/risk-management-step3" element={<RiskManagementStep3 />} />
-          <Route path="/risk-management-chat" element={<RiskManagementChat />} />
-          <Route path="/risk-management-step2" element={<RiskManagementStep2 />} />
-          <Route path="/risk-management-final" element={<RiskManagementFinal />} />
+
+          <Route
+            path="/ai-compliance"
+            element={
+              <ProtectedRoute>
+                <AICompliance />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/audit-compliance"
+            element={
+              <ProtectedRoute>
+                <AuditCompliance />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/audit-compliance-step1"
+            element={
+              <ProtectedRoute>
+                <AuditComplianceStep1 />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/audit-compliance-step2"
+            element={
+              <ProtectedRoute>
+                <AuditComplianceStep2 />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/audit-compliance-step3"
+            element={
+              <ProtectedRoute>
+                <AuditComplianceStep3 />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/audit-compliance-step4"
+            element={
+              <ProtectedRoute>
+                <AuditComplianceStep4 />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/chat"
+            element={
+              <ProtectedRoute>
+                <Chat />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/risk-management-step3"
+            element={
+              <ProtectedRoute>
+                <RiskManagementStep3 />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/risk-management-chat"
+            element={
+              <ProtectedRoute>
+                <RiskManagementChat />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/risk-management-step2"
+            element={
+              <ProtectedRoute>
+                <RiskManagementStep2 />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/risk-management-final"
+            element={
+              <ProtectedRoute>
+                <RiskManagementFinal />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
       </div>
     </Router>

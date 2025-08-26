@@ -1,11 +1,13 @@
 "use client"
 
 import { useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import Header from "../components/Header"
 import Footer from "../components/Footer"
 import Preloader from "../components/Preloader"
 import ScrollTop from "../components/ScrollTop"
+import Swal from "sweetalert2"
+import { loginUser } from "../api/auth"
 
 const Login = () => {
   const navigate = useNavigate()
@@ -14,6 +16,8 @@ const Login = () => {
     password: "",
     rememberMe: false,
   })
+  const [isLoading, setIsLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target
@@ -23,10 +27,48 @@ const Login = () => {
     }))
   }
 
-  const handleSubmit = (e) => {
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword)
+  }
+
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    // Handle login logic here
-    navigate("/chat")
+    setIsLoading(true)
+
+    try {
+      const { success, data } = await loginUser({
+        email: formData.email,
+        password: formData.password,
+      })
+
+      if (success && data.status === "success") {
+        // Store token in localStorage
+        localStorage.setItem("token", data.token)
+        localStorage.setItem("user", JSON.stringify(data.user))
+
+        Swal.fire({
+          icon: "success",
+          title: "Login Successful!",
+          text: `Welcome back, ${data.user.name}!`,
+          confirmButtonColor: "#3AC6BD",
+          timer: 2000,
+          timerProgressBar: true,
+        }).then(() => {
+          navigate("/chat")
+        })
+      } else {
+        throw new Error(data.message || "Login failed")
+      }
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "Login Failed",
+        text: error.message || "Invalid email or password. Please try again.",
+        confirmButtonColor: "#3AC6BD",
+      })
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -53,20 +95,43 @@ const Login = () => {
                     value={formData.email}
                     onChange={handleInputChange}
                     required
+                    disabled={isLoading}
                   />
                 </div>
                 <div className="mb-3">
                   <label htmlFor="password">Password</label>
-                  <input
-                    type="password"
-                    className="form-control"
-                    id="password"
-                    name="password"
-                    placeholder="Your password"
-                    value={formData.password}
-                    onChange={handleInputChange}
-                    required
-                  />
+                  <div style={{ position: "relative" }}>
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      className="form-control"
+                      id="password"
+                      name="password"
+                      placeholder="Your password"
+                      value={formData.password}
+                      onChange={handleInputChange}
+                      required
+                      disabled={isLoading}
+                      style={{ paddingRight: "40px" }}
+                    />
+                    <button
+                      type="button"
+                      onClick={togglePasswordVisibility}
+                      style={{
+                        position: "absolute",
+                        right: "10px",
+                        top: "50%",
+                        transform: "translateY(-50%)",
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                        color: "#3AC6BD",
+                        fontSize: "16px",
+                      }}
+                      disabled={isLoading}
+                    >
+                      {showPassword ? "👁️" : "👁️‍🗨️"}
+                    </button>
+                  </div>
                 </div>
                 <div className="mb-3">
                   <label className="switch">
@@ -75,6 +140,7 @@ const Login = () => {
                       name="rememberMe"
                       checked={formData.rememberMe}
                       onChange={handleInputChange}
+                      disabled={isLoading}
                     />
                     <span className="slider round"></span>
                   </label>
@@ -82,12 +148,12 @@ const Login = () => {
                     Remember me
                   </label>
                 </div>
-                <button type="submit" className="btn btn-login">
-                  Sign In
+                <button type="submit" className="btn btn-login" disabled={isLoading}>
+                  {isLoading ? "Signing In..." : "Sign In"}
                 </button>
               </form>
               <p className="signup-text">
-                Don't have an account? <a href="/register">Sign up</a>
+                Don't have an account? <Link to="/signup">Sign up</Link>
               </p>
             </div>
           </div>

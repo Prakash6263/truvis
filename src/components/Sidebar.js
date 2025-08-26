@@ -1,4 +1,37 @@
+"use client"
+
+import { useNavigate } from "react-router-dom"
+import Swal from "sweetalert2"
+import { logout } from "../utils/auth"
+
 const Sidebar = ({ isCollapsed, onToggle }) => {
+  const navigate = useNavigate()
+
+  const handleLogout = () => {
+    Swal.fire({
+      title: "Are you sure?",
+      text: "You will be logged out of your account",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Yes, logout",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        logout()
+        Swal.fire({
+          title: "Logged Out!",
+          text: "You have been successfully logged out",
+          icon: "success",
+          timer: 1500,
+          showConfirmButton: false,
+        }).then(() => {
+          navigate("/login")
+        })
+      }
+    })
+  }
+
   return (
     <div className={`sidebar ${isCollapsed ? "collapsed" : ""}`} id="sidebar">
       <div className="logo">
@@ -45,7 +78,7 @@ const Sidebar = ({ isCollapsed, onToggle }) => {
         </li>
       </ul>
 
-      <button className="btn logout-btn mt-4">
+      <button className="btn logout-btn mt-4" onClick={handleLogout}>
         <i className="fas fa-sign-out-alt me-2"></i> Log Out
       </button>
     </div>
