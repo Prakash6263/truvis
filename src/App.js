@@ -20,6 +20,8 @@ import RiskManagementFinal from "./pages/RiskManagementFinal"
 import RiskManagementChat from "./pages/RiskManagementChat"
 import ProtectedRoute from "./components/ProtectedRoute"
 import AuthRoute from "./components/AuthRoute"
+import AccountSettings from "./pages/AccountSettings"
+import CoinManagement from "./pages/coin-management"
 
 function App() {
   return (
@@ -134,6 +136,22 @@ function App() {
             element={
               <ProtectedRoute>
                 <RiskManagementStep2 />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/account-settings"
+            element={
+              <ProtectedRoute>
+                <AccountSettings />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/coin-management"
+            element={
+              <ProtectedRoute>
+                <CoinManagement />
               </ProtectedRoute>
             }
           />

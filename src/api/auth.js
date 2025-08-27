@@ -1,5 +1,6 @@
 // API functions for authentication endpoints
-const API_BASE_URL = "http://localhost:5000"
+const API_BASE_URL = "https://truvis.onrender.com"
+// const API_BASE_URL = "http://localhost:5000"
 
 // Register user
 export const registerUser = async (userData) => {
@@ -74,7 +75,12 @@ export const getUserProfile = async (token) => {
     })
 
     const data = await response.json()
-    return { success: response.ok, data }
+
+    // Check data.status instead of response.ok since API returns 200 for both success and error
+    return {
+      success: data.status === "success",
+      data,
+    }
   } catch (error) {
     return {
       success: false,
@@ -82,3 +88,31 @@ export const getUserProfile = async (token) => {
     }
   }
 }
+
+// Update user profile
+export const updateUserProfile = async (token, userData) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/update`, {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(userData),
+    })
+
+    const data = await response.json()
+
+    // Check data.status instead of response.ok since API returns 200 for both success and error
+    return {
+      success: data.status === "success",
+      data,
+    }
+  } catch (error) {
+    return {
+      success: false,
+      data: { message: "Network error. Please try again." },
+    }
+  }
+}
+

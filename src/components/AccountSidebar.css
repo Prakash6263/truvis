@@ -1,0 +1,42 @@
+/* Sidebar overlay for mobile */
+.sidebar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 998;
+  display: none;
+}
+
+/* Show overlay only on mobile devices */
+@media (max-width: 768px) {
+  .sidebar-overlay {
+    display: block;
+  }
+}
+
+/* Sidebar close button */
+.sidebar-close-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #3ac6bd;
+  cursor: pointer;
+  display: none;
+}
+
+/* Show close button only on mobile devices */
+@media (max-width: 768px) {
+  .sidebar-close-btn {
+    display: block;
+  }
+}
+
+/* Hide close button on desktop */
+@media (min-width: 769px) {
+  .sidebar-close-btn {
+    display: none !important;
+  }
+}

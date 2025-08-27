@@ -21,26 +21,14 @@ const Chat = () => {
     }
   }, [isDarkMode])
 
-  const toggleDarkMode = () => {
-    setIsDarkMode(!isDarkMode)
-  }
+
 
   const toggleSidebar = () => {
     setIsSidebarCollapsed(!isSidebarCollapsed)
   }
 
-  const handleLogout = () => {
-    navigate("/login")
-  }
 
-  const handleSendMessage = (e) => {
-    e.preventDefault()
-    if (message.trim()) {
-      // Handle message sending logic here
-      console.log("Sending message:", message)
-      setMessage("")
-    }
-  }
+
 
   return (
     <div>
