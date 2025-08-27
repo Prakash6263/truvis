@@ -146,6 +146,7 @@ function App() {
                 <AccountSettings />
               </ProtectedRoute>
             }
+            
           />
           <Route
             path="/coin-management"

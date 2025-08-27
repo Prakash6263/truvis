@@ -64,8 +64,18 @@ export const loginUser = async (credentials) => {
 }
 
 // Get user profile (example for future use)
-export const getUserProfile = async (token) => {
+export const getUserProfile = async () => {
   try {
+    // Get token from localStorage
+    const token = localStorage.getItem("token")
+
+    if (!token) {
+      return {
+        success: false,
+        data: { message: "No authentication token found" },
+      }
+    }
+
     const response = await fetch(`${API_BASE_URL}/auth/profile`, {
       method: "GET",
       headers: {
@@ -75,6 +85,16 @@ export const getUserProfile = async (token) => {
     })
 
     const data = await response.json()
+
+    // If token is invalid (401), clear it from localStorage
+    if (response.status === 401) {
+      localStorage.removeItem("token")
+      localStorage.removeItem("user")
+      return {
+        success: false,
+        data: { message: "Invalid or expired token" },
+      }
+    }
 
     // Check data.status instead of response.ok since API returns 200 for both success and error
     return {
@@ -90,8 +110,18 @@ export const getUserProfile = async (token) => {
 }
 
 // Update user profile
-export const updateUserProfile = async (token, userData) => {
+export const updateUserProfile = async (userData) => {
   try {
+    // Get token from localStorage
+    const token = localStorage.getItem("token")
+
+    if (!token) {
+      return {
+        success: false,
+        data: { message: "No authentication token found" },
+      }
+    }
+
     const response = await fetch(`${API_BASE_URL}/auth/update`, {
       method: "PUT",
       headers: {
@@ -102,6 +132,16 @@ export const updateUserProfile = async (token, userData) => {
     })
 
     const data = await response.json()
+
+    // If token is invalid (401), clear it from localStorage
+    if (response.status === 401) {
+      localStorage.removeItem("token")
+      localStorage.removeItem("user")
+      return {
+        success: false,
+        data: { message: "Invalid or expired token" },
+      }
+    }
 
     // Check data.status instead of response.ok since API returns 200 for both success and error
     return {
@@ -115,4 +155,3 @@ export const updateUserProfile = async (token, userData) => {
     }
   }
 }
-

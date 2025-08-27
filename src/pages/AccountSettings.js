@@ -1,10 +1,10 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useNavigate } from "react-router-dom"
 import Sidebar from "../components/AccountSidebar"
 import TopBar from "../components/AccountTopBar"
 import { getUserProfile, updateUserProfile } from "../api/auth"
-import { getToken } from "../utils/auth"
 import Swal from "sweetalert2"
 import PhoneInput from "react-phone-input-2"
 import "react-phone-input-2/lib/style.css"
@@ -15,6 +15,7 @@ export default function AccountSettings() {
   const [phone, setPhone] = useState("")
   const [loading, setLoading] = useState(false)
   const [profileLoading, setProfileLoading] = useState(true)
+  const navigate = useNavigate()
 
   const [formData, setFormData] = useState({
     name: "",
@@ -22,16 +23,14 @@ export default function AccountSettings() {
     phone: "",
   })
 
+  const handleBackToHome = () => {
+    navigate("/")
+  }
+
   useEffect(() => {
     const fetchUserProfile = async () => {
       try {
-        const token = getToken()
-        if (!token) {
-          console.error("No token found")
-          return
-        }
-
-        const { success, data } = await getUserProfile(token)
+        const { success, data } = await getUserProfile()
         if (success && data.user) {
           setFormData({
             name: data.user.name || "",
@@ -40,6 +39,10 @@ export default function AccountSettings() {
           })
           setPhone(data.user.phone || "")
         } else {
+          if (data.message === "Invalid or expired token") {
+            window.location.href = "/login"
+            return
+          }
           Swal.fire({
             icon: "error",
             title: "Error",
@@ -90,17 +93,7 @@ export default function AccountSettings() {
     setLoading(true)
 
     try {
-      const token = getToken()
-      if (!token) {
-        Swal.fire({
-          icon: "error",
-          title: "Error",
-          text: "Please login again",
-        })
-        return
-      }
-
-      const { success, data } = await updateUserProfile(token, {
+      const { success, data } = await updateUserProfile({
         name: formData.name,
         email: formData.email,
         phone: formData.phone || phone,
@@ -115,6 +108,10 @@ export default function AccountSettings() {
           showConfirmButton: false,
         })
       } else {
+        if (data.message === "Invalid or expired token") {
+          window.location.href = "/login"
+          return
+        }
         Swal.fire({
           icon: "error",
           title: "Error",
@@ -175,6 +172,25 @@ export default function AccountSettings() {
             <div className="row justify-content-center">
               <div className="col-lg-12">
                 <div className="form-card">
+                  <div className="row justify-content-center mb-4">
+                    <div className="col-lg-12 text-center">
+                      <button
+                        className="btn btn-primary"
+                        onClick={handleBackToHome}
+                        title="Back to Home"
+                        style={{
+                          backgroundColor: "#3AC6BD",
+                          borderColor: "#3AC6BD",
+                          color: "white",
+                          fontWeight: "bold",
+                          padding: "10px 20px",
+                        }}
+                      >
+                        <i className="fas fa-arrow-left" style={{ marginRight: "8px" }} />
+                        Back to Home
+                      </button>
+                    </div>
+                  </div>
                   <div className="row justify-content-center">
                     <div className="col-lg-12 mb-5">
                       <div className="d-flex justify-content-center">
