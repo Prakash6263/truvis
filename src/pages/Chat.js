@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom"
 import Preloader from "../components/Preloader"
 import ChatInput from "../components/ChatInput"
 import Sidebar from "../components/Sidebar"
+import TopBar from "../components/TopBar"
 
 const Chat = () => {
   const navigate = useNavigate()
@@ -63,22 +64,7 @@ const Chat = () => {
 
         {/* Main Area */}
         <div className="main2">
-          <div className="topbar mb-3">
-            <div>
-              <button className="btn btn-toggle-sidebar w-auto" id="sidebarToggle" onClick={toggleSidebar}>
-                <i className="fas fa-bars"></i>
-              </button>
-            </div>
-
-            <div className="right w-auto">
-              <button className="coin theme-btn">50 Coin</button>
-              <i className="fas fa-bell icon"></i>
-              <img src="assets/img/Avatar.png" className="rounded-circle" alt="User" />
-              {/* <button className="btn btn-sm btn-outline-dark" id="modeToggle" onClick={toggleDarkMode}>
-                🌓
-              </button> */}
-            </div>
-          </div>
+      <TopBar/>
 
           <div className="middle">
             <div className="text-center mt-5 mb-5">

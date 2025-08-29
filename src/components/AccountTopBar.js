@@ -38,13 +38,14 @@ export default function TopBar({ onToggleSidebar }) {
   }, [navigate])
 
   const handleBackToHome = () => {
-    navigate("/")
+    navigate("/buy-coin")
   }
+
 
   return (
     <div className="topbar mb-3">
       <div>
-        <button
+        {/* <button
           className="btn btn-primary me-2"
           onClick={handleBackToHome}
           title="Back to Home"
@@ -57,22 +58,22 @@ export default function TopBar({ onToggleSidebar }) {
         >
           <i className="fas fa-arrow-left" style={{ marginRight: "5px" }} />
           Back
-        </button>
+        </button> */}
         <button className="btn btn-toggle-sidebar w-auto" id="sidebarToggle" onClick={onToggleSidebar}>
           <i className="fas fa-bars" />
         </button>
       </div>
       <div className="right w-auto">
-        <button className="coin theme-btn">{loading ? "Loading..." : `${userData?.credits || 0} Coin`}</button>
+        <button className="coin theme-btn" onClick={handleBackToHome}>{loading ? "Loading..." : `${userData?.credits || 0} Coin`}</button>
         <a href="#">
           <span className="fw-semibold">
             <i className="fas fa-user icon" />
             {loading ? "Loading..." : userData?.name || "Username"}
           </span>
         </a>
-        <a href="#">
+        {/* <a href="#">
           <i className="fas fa-cog icon" />
-        </a>
+        </a> */}
         <a href="#">
           <i className="fas fa-bell icon" />
         </a>

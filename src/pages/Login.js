@@ -54,7 +54,7 @@ const Login = () => {
           timer: 2000,
           timerProgressBar: true,
         }).then(() => {
-          navigate("/chat")
+          navigate("/dashboard")
         })
       } else {
         throw new Error(data.message || "Login failed")

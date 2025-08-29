@@ -22,6 +22,7 @@ import ProtectedRoute from "./components/ProtectedRoute"
 import AuthRoute from "./components/AuthRoute"
 import AccountSettings from "./pages/AccountSettings"
 import CoinManagement from "./pages/coin-management"
+import Buycoin from "./pages/Buycoin"
 
 function App() {
   return (
@@ -108,7 +109,7 @@ function App() {
             }
           />
           <Route
-            path="/chat"
+            path="/dashboard"
             element={
               <ProtectedRoute>
                 <Chat />
@@ -144,6 +145,15 @@ function App() {
             element={
               <ProtectedRoute>
                 <AccountSettings />
+              </ProtectedRoute>
+            }
+            
+          />
+          <Route
+            path="/buy-coin"
+            element={
+              <ProtectedRoute>
+                <Buycoin />
               </ProtectedRoute>
             }
             
