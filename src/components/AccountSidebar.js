@@ -1,6 +1,11 @@
 "use client"
-
+import { useNavigate } from "react-router-dom"
 export default function Sidebar({ collapsed, onToggle }) {
+  const navigate = useNavigate()
+
+  const handleNavigateHome = () => {
+    navigate("/dashboard")
+  }
   return (
     <>
       {!collapsed && (
@@ -41,8 +46,8 @@ export default function Sidebar({ collapsed, onToggle }) {
         </div>
 
         <ul className="chat-list">
-          <li>
-            <img src="assets/icons/icons/default.png" style={{ width: 20, marginRight: 10 }} /> Dashboard
+          <li onClick={handleNavigateHome} style={{ cursor: "pointer" }}>
+            <img src="assets/icons/icons/default.png" style={{ width: 20, marginRight: 10 }}/> Dashboard
           </li>
           <li>
             <img src="assets/icons/icons/chart.png" style={{ width: 20, marginRight: 10 }} /> Accountancy Audit{" "}

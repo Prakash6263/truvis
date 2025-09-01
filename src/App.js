@@ -23,6 +23,7 @@ import AuthRoute from "./components/AuthRoute"
 import AccountSettings from "./pages/AccountSettings"
 import CoinManagement from "./pages/coin-management"
 import Buycoin from "./pages/Buycoin"
+import PricingPlans from "./pages/PricingPlans"
 
 function App() {
   return (
@@ -163,6 +164,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <CoinManagement />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/plans"
+            element={
+              <ProtectedRoute>
+                <PricingPlans />
               </ProtectedRoute>
             }
           />

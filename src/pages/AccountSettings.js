@@ -1,5 +1,3 @@
-"use client"
-
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import Sidebar from "../components/AccountSidebar"
@@ -94,8 +92,6 @@ export default function AccountSettings() {
 
     try {
       const { success, data } = await updateUserProfile({
-        name: formData.name,
-        email: formData.email,
         phone: formData.phone || phone,
       })
 
@@ -238,9 +234,18 @@ export default function AccountSettings() {
                               name="name"
                               className="form-control"
                               value={formData.name}
-                              onChange={handleInputChange}
-                              disabled={loading}
-                              required
+                              disabled={true}
+                              readOnly
+                              aria-readonly="true"
+                              tabIndex={-1}
+                              onFocus={(e) => e.target.blur()}
+                              autoComplete="off"
+                              style={{
+                                backgroundColor: "#f5f5f5",
+                                cursor: "not-allowed",
+                                pointerEvents: "none",
+                                userSelect: "none",
+                              }}
                             />
                           </div>
                           <div className="mb-3">
@@ -250,9 +255,18 @@ export default function AccountSettings() {
                               name="email"
                               className="form-control"
                               value={formData.email}
-                              onChange={handleInputChange}
-                              disabled={loading}
-                              required
+                              disabled={true}
+                              readOnly
+                              aria-readonly="true"
+                              tabIndex={-1}
+                              onFocus={(e) => e.target.blur()}
+                              autoComplete="off"
+                              style={{
+                                backgroundColor: "#f5f5f5",
+                                cursor: "not-allowed",
+                                pointerEvents: "none",
+                                userSelect: "none",
+                              }}
                             />
                           </div>
                           <div className="mb-3">

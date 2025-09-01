@@ -29,7 +29,10 @@ const Chat = () => {
   }
 
 
-
+  const handleSendMessage = (message) => {
+    console.log("Sending message:", message)
+    // Handle message sending logic here
+  }
 
   return (
     <div>
@@ -106,7 +109,7 @@ const Chat = () => {
             </div>
           </div>
         </div>
-<ChatInput/>
+<ChatInput onSendMessage={handleSendMessage}/>
         {/* <div className="chat-input">
           <form onSubmit={handleSendMessage} className="d-flex align-items-center">
             <input
