@@ -18,6 +18,7 @@ export default function Sidebar({ collapsed, onToggle }) {
             left: 0,
             right: 0,
             bottom: 0,
+            inset:null,
             backgroundColor: "rgba(0, 0, 0, 0.5)",
             zIndex: 998,
             display: window.innerWidth <= 768 ? "block" : "none",
@@ -72,3 +73,7 @@ export default function Sidebar({ collapsed, onToggle }) {
     </>
   )
 }
+
+
+
+

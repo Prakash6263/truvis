@@ -73,3 +73,45 @@ export async function buyPlan(planId) {
     return { success: false, message: err?.message || "Network error" }
   }
 }
+
+export async function fetchMyPurchases() {
+  try {
+    const token =
+      (typeof localStorage !== "undefined" && (localStorage.getItem("token") || localStorage.getItem("authToken"))) ||
+      ""
+
+    if (!token) {
+      return { success: false, history: [], message: "Missing auth token" }
+    }
+
+    const res = await fetch(`${API_BASE_URL}/plan/my-purchases`, {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    })
+
+    const text = await res.text()
+    let data = {}
+    try {
+      data = text ? JSON.parse(text) : {}
+    } catch {
+      // ignore JSON parse error
+    }
+
+    if (!res.ok) {
+      return {
+        success: false,
+        history: [],
+        message: data?.message || `HTTP ${res.status}: ${text || "Failed to fetch purchases"}`,
+      }
+    }
+
+    const history = Array.isArray(data?.history) ? data.history : []
+    return { success: true, history }
+  } catch (err) {
+    return { success: false, history: [], message: err?.message || "Network error" }
+  }
+}

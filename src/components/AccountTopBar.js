@@ -38,7 +38,7 @@ export default function TopBar({ onToggleSidebar }) {
   }, [navigate])
 
   const handleBackToHome = () => {
-    navigate("/buy-coin")
+    navigate("/plans")
   }
 
 

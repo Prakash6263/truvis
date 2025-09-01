@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import Sidebar from "../components/AccountSidebar"
@@ -6,6 +7,7 @@ import { getUserProfile, updateUserProfile } from "../api/auth"
 import Swal from "sweetalert2"
 import PhoneInput from "react-phone-input-2"
 import "react-phone-input-2/lib/style.css"
+import { fetchMyPurchases } from "../api/plans"
 
 export default function AccountSettings() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
@@ -13,6 +15,11 @@ export default function AccountSettings() {
   const [phone, setPhone] = useState("")
   const [loading, setLoading] = useState(false)
   const [profileLoading, setProfileLoading] = useState(true)
+
+  const [purchases, setPurchases] = useState([])
+  const [purchasesLoading, setPurchasesLoading] = useState(false)
+  const [purchasesError, setPurchasesError] = useState("")
+
   const navigate = useNavigate()
 
   const [formData, setFormData] = useState({
@@ -24,6 +31,36 @@ export default function AccountSettings() {
   const handleBackToHome = () => {
     navigate("/")
   }
+
+  useEffect(() => {
+    if (activeTab !== "coin-management") return
+    let cancelled = false
+
+    async function loadPurchases() {
+      setPurchasesLoading(true)
+      setPurchasesError("")
+      try {
+        const { success, history, message } = await fetchMyPurchases()
+        if (cancelled) return
+        if (success) {
+          setPurchases(Array.isArray(history) ? history : [])
+        } else {
+          setPurchases([])
+          setPurchasesError(message || "Failed to fetch purchases")
+        }
+      } catch (err) {
+        if (cancelled) return
+        setPurchasesError(err?.message || "Network error")
+      } finally {
+        if (!cancelled) setPurchasesLoading(false)
+      }
+    }
+
+    loadPurchases()
+    return () => {
+      cancelled = true
+    }
+  }, [activeTab])
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -63,7 +100,7 @@ export default function AccountSettings() {
   }, [])
 
   const toggleSidebar = () => {
-    setSidebarCollapsed(!sidebarCollapsed)
+    setSidebarCollapsed((v) => !v)
   }
 
   const handleTabClick = (tabName) => {
@@ -143,24 +180,126 @@ export default function AccountSettings() {
           className="sidebar-overlay"
           onClick={toggleSidebar}
           style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
+            // position: "fixed",
+            // top: 0,
+            // left: 0,
             width: "100%",
             height: "100%",
             backgroundColor: "rgba(0, 0, 0, 0.5)",
             zIndex: 998,
-            display: window.innerWidth <= 768 ? "block" : "none",
+            // Only show overlay on mobile/tablet
+            display: typeof window !== "undefined" && window.innerWidth <= 768 ? "block" : "none",
           }}
         />
       )}
+
       <style
         dangerouslySetInnerHTML={{
-          __html:
-            "\n    :root {\n      --bg-light: #ffffff;\n      --bg-dark: #121212;\n      --text-light: #000;\n      --text-dark: #fff;\n      --accent: #3AC6BD;\n      --sidebar-width: 300px;\n      --card-bg: #f9f9f9;\n      --border-color: #eee;\n    }\n    \n    body {\n     \n      margin: 0;\n      background-color: var(--bg-light);\n      color: var(--text-light);\n      transition: all 0.3s ease;\n    }\n    \n    .help-box {\n      background: #0d9488;\n      color: #fff;\n      border-radius: 12px;\n      padding: 1rem;\n      text-align: center;\n      margin: 1rem;\n    }\n    .help-box button {\n      background: #fff;\n      color: #0d9488;\n      border: none;\n      padding: 4px 15px;\n      border-radius: 20px;\n      font-size: 14px;\n    }\n    @media (max-width: 768px) {\n    .sidebar {\n        left: -300px;\n    }\n    .sidebar.collapsed {\n        left: -300px;\n    }\n  }\n  \n  /* Added desktop sidebar toggle styles */\n  @media (min-width: 769px) {\n    .sidebar.collapsed {\n        left: -300px;\n    }\n    .main2 {\n        margin-left: 0;\n        transition: margin-left 0.3s ease;\n    }\n    /* Hide overlay on desktop */\n    .sidebar-overlay {\n        display: none !important;\n    }\n  }\n  \n  .nav-tabs {\n      border-bottom: none;\n      margin-bottom: 20px;\n    }\n    .nav-tabs .nav-link {\n      border: none;\n      color: #999;\n      font-weight: 500;\n    }\n    .nav-tabs .nav-link.active {\n      color: #00bfa5;\n      border-bottom: 2px solid #00bfa5;\n    }\n    .react-tel-input .form-control {\n      width: 100%;\n      height: 38px;\n      padding: 6px 12px 6px 58px;\n      border: 1px solid #ced4da;\n      border-radius: 4px;\n    }\n    .react-tel-input .flag-dropdown {\n      border: 1px solid #ced4da;\n      border-right: none;\n      border-radius: 4px 0 0 4px;\n    }\n    .react-tel-input .selected-flag {\n      padding: 0 11px;\n    }\n  ",
+          __html: `
+    :root {
+      --bg-light: #ffffff;
+      --bg-dark: #121212;
+      --text-light: #000;
+      --text-dark: #fff;
+      --accent: #3AC6BD;
+      --sidebar-width: 300px;
+      --card-bg: #f9f9f9;
+      --border-color: #eee;
+    }
+
+    body {
+      margin: 0;
+      background-color: var(--bg-light);
+      color: var(--text-light);
+      transition: all 0.3s ease;
+    }
+
+    .help-box {
+      background: #0d9488;
+      color: #fff;
+      border-radius: 12px;
+      padding: 1rem;
+      text-align: center;
+      margin: 1rem;
+    }
+    .help-box button {
+      background: #fff;
+      color: #0d9488;
+      border: none;
+      padding: 4px 15px;
+      border-radius: 20px;
+      font-size: 14px;
+    }
+
+    /* Mobile & tablet */
+    @media (max-width: 768px) {
+      .sidebar { left: -300px; }
+      .sidebar.collapsed { left: -300px; }
+      /* On small screens, content should start at the left edge */
+      .main2 { margin-left: 0; }
+    }
+
+    /* Desktop */
+    @media (min-width: 769px) {
+      .sidebar.collapsed { left: -300px; }
+
+      /* Default: when sidebar is visible, push content by sidebar width */
+      .main2 {
+        margin-left: var(--sidebar-width);
+        transition: margin-left 0.3s ease;
+      }
+
+      /* When the Sidebar has 'collapsed' class, remove the margin */
+      .sidebar.collapsed + .main2 {
+        margin-left: 0;
+      }
+
+      /* Hide overlay on desktop */
+      .sidebar-overlay {
+        display: none !important;
+      }
+    }
+
+    .nav-tabs {
+      border-bottom: none;
+      margin-bottom: 20px;
+    }
+    .nav-tabs .nav-link {
+      border: none;
+      color: #999;
+      font-weight: 500;
+    }
+    .nav-tabs .nav-link.active {
+      color: #00bfa5;
+      border-bottom: 2px solid #00bfa5;
+    }
+
+    .react-tel-input .form-control {
+      width: 100%;
+      height: 38px;
+      padding: 6px 12px 6px 58px;
+      border: 1px solid #ced4da;
+      border-radius: 4px;
+    }
+    .react-tel-input .flag-dropdown {
+      border: 1px solid #ced4da;
+      border-right: none;
+      border-radius: 4px 0 0 4px;
+    }
+    .react-tel-input .selected-flag {
+      padding: 0 11px;
+    }
+
+    /* Keep Date column on one line so it doesn't wrap awkwardly */
+    .table td:nth-child(2), .table th:nth-child(2) {
+      white-space: nowrap;
+    }
+          `,
         }}
       />
+
       <main className="main">
+        {/* Ensure Sidebar root element has className 'sidebar' inside its component for the sibling selector to work */}
         <Sidebar collapsed={sidebarCollapsed} onToggle={toggleSidebar} />
         <div className="main2">
           <TopBar onToggleSidebar={toggleSidebar} />
@@ -187,6 +326,7 @@ export default function AccountSettings() {
                       </button>
                     </div>
                   </div>
+
                   <div className="row justify-content-center">
                     <div className="col-lg-12 mb-5">
                       <div className="d-flex justify-content-center">
@@ -314,48 +454,65 @@ export default function AccountSettings() {
                           <table className="table align-middle mb-0">
                             <thead>
                               <tr>
-                                <th>
+                                {/* <th>
                                   <input type="checkbox" />
-                                </th>
-                                <th>Transaction Id</th>
+                                </th> */}
+                                {/* <th>Transaction Id</th> */}
                                 <th>Date</th>
                                 <th>Amount</th>
                                 <th>Card Number</th>
                               </tr>
                             </thead>
                             <tbody>
-                              <tr>
-                                <td>
-                                  <input type="checkbox" />
-                                </td>
-                                <td>251456815</td>
-                                <td>10-10-2024</td>
-                                <td>2 coin</td>
-                                <td>45465646XXXX</td>
-                              </tr>
-                              <tr>
-                                <td>
-                                  <input type="checkbox" />
-                                </td>
-                                <td>251456815</td>
-                                <td>10-10-2024</td>
-                                <td>1 coin</td>
-                                <td>445565646XXXX</td>
-                              </tr>
-                              <tr>
-                                <td>
-                                  <input type="checkbox" />
-                                </td>
-                                <td>251456815</td>
-                                <td>10-10-2024</td>
-                                <td>5 coin</td>
-                                <td>556565646XXXX</td>
-                              </tr>
+                              {purchasesLoading ? (
+                                <tr>
+                                  <td colSpan={5} className="text-center">
+                                    <div className="spinner-border text-primary" role="status" />
+                                  </td>
+                                </tr>
+                              ) : purchasesError ? (
+                                <tr>
+                                  <td colSpan={5} className="text-danger text-center">
+                                    {purchasesError}
+                                  </td>
+                                </tr>
+                              ) : purchases.length === 0 ? (
+                                <tr>
+                                  <td colSpan={5} className="text-muted text-center">
+                                    No purchases found.
+                                  </td>
+                                </tr>
+                              ) : (
+                                purchases.map((p) => {
+                                  const dateStr = new Date(p?.purchasedAt || p?.createdAt).toLocaleString("en-US", {
+                                    year: "numeric",
+                                    month: "short",
+                                    day: "2-digit",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })
+                                  return (
+                                    <tr key={p._id}>
+                                      {/* <td>
+                                        <input type="checkbox" />
+                                      </td> */}
+                                      {/* <td>{p?.stripePaymentId || p?._id}</td> */}
+                                      <td>{dateStr}</td>
+                                      <td>{p?.amount ?? "-"}</td>
+                                      <td>{p?.card ?? "-"}</td>
+                                    </tr>
+                                  )
+                                })
+                              )}
                             </tbody>
                           </table>
                         </div>
+
+                        {/* simple pagination footer */}
                         <div className="d-flex justify-content-between align-items-center mt-2">
-                          <small className="text-dark">Items per page 1-3 of 200 items</small>
+                          <small className="text-dark">
+                            Showing {purchases.length > 0 ? `1-${purchases.length}` : "0"} of {purchases.length} items
+                          </small>
                           <nav>
                             <ul className="pagination pagination-sm mb-0 mt-0">
                               <li className="page-item disabled text-dark">

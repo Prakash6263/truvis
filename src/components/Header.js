@@ -59,11 +59,11 @@ const Header = () => {
               </div>
               <div className="offcanvas-body">
                 <ul className="navbar-nav justify-content-center flex-grow-1">
-                  {/* <li className="nav-item">
-                    <a className="nav-link" href="/">
+                  <li className="nav-item">
+                    <a className="nav-link" href="/dashboard">
                       Home
                     </a>
-                  </li> */}
+                  </li>
                   <li className="nav-item">
                     <a className="nav-link" href="/about">
                       About Us

@@ -4,11 +4,18 @@ import { useEffect, useState } from "react"
 import Sidebar from "../components/AccountSidebar"
 import TopBar from "../components/AccountTopBar"
 import { fetchPlans } from "../api/plans.js"
+import { Link } from "react-router-dom"
 
 export default function PricingPlans() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [plans, setPlans] = useState(null)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+
+
+      const toggleSidebar = () => {
+    setSidebarCollapsed((v) => !v)
+  }
 
   useEffect(() => {
     let mounted = true
@@ -124,19 +131,6 @@ export default function PricingPlans() {
     })
   }
 
-  const freeFallbackFeatures = [
-    { label: "Customer Support", available: true },
-    { label: "Free User Account", available: true },
-    { label: "Monthly Reports", available: false },
-    { label: "Multiple Devices", available: false },
-  ]
-
-  const premiumFallbackFeatures = [
-    { label: "Customer Support", available: true },
-    { label: "Up to 10 Users", available: true },
-    { label: "Monthly Reports", available: true },
-    { label: "Multiple Devices Supported", available: true },
-  ]
 
   // Also tolerate name hints and ensure the two cards never share the same object.
   const paidPlan = Array.isArray(plans)
@@ -160,8 +154,7 @@ export default function PricingPlans() {
       null
     : null
 
-  const freeFeatures = normalizeFeatures(freePlan, freeFallbackFeatures)
-  const premiumFeatures = normalizeFeatures(paidPlan, premiumFallbackFeatures)
+
 
   return (
     <>
@@ -173,6 +166,24 @@ export default function PricingPlans() {
             <div />
           </div>
         </div>
+      )}
+
+          {!sidebarCollapsed && (
+        <div
+          className="sidebar-overlay"
+          onClick={toggleSidebar}
+          style={{
+            // position: "fixed",
+            // top: 0,
+            // left: 0,
+            width: "100%",
+            height: "100%",
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            zIndex: 998,
+            // Only show overlay on mobile/tablet
+            display: typeof window !== "undefined" && window.innerWidth <= 768 ? "block" : "none",
+          }}
+        />
       )}
       <style
         dangerouslySetInnerHTML={{
@@ -271,7 +282,7 @@ export default function PricingPlans() {
       />
       <main className="main">
         {/* Sidebar */}
-        <Sidebar />
+        <Sidebar collapsed={sidebarCollapsed} onToggle={toggleSidebar} />
         {/* Main Area */}
         <div className="main2">
           <TopBar />
@@ -303,23 +314,19 @@ export default function PricingPlans() {
                             "Joy horrible moreover man feelings own shy. Request norland neither mistake for yet. Between the for morning assured."}
                         </p>
                         <ul>
-                          {normalizeFeatures(freePlan, freeFallbackFeatures).map((f, i) => (
+                          {normalizeFeatures(freePlan).map((f, i) => (
                             <li key={i}>
                               <i className={`fa ${f.available ? "fa-check text-success" : "fa-times text-danger"}`} />{" "}
                               {f.label}
                             </li>
                           ))}
                         </ul>
-                        <a
-                          href={
-                            freePlan
-                              ? `/buy-coin?planId=${encodeURIComponent(freePlan._id || freePlan.id || "")}`
-                              : "/buy-coin"
-                          }
+                        <Link
+                          to="/dashboard"
                           className="btn btn-outline-dark rounded-pill px-4"
                         >
                           Join for free
-                        </a>
+                        </Link>
                       </div>
                     </div>
                     {/* Premium Plan */}
@@ -333,7 +340,7 @@ export default function PricingPlans() {
                             "Oven even feet time have an oat. Relation so in confined smallest children unpacked delicate. Why sir end believe."}
                         </p>
                         <ul>
-                          {normalizeFeatures(paidPlan, premiumFallbackFeatures).map((f, i) => (
+                          {normalizeFeatures(paidPlan).map((f, i) => (
                             <li key={i}>
                               <i className={`fa ${f.available ? "fa-check" : "fa-times"}`} /> {f.label}
                             </li>
