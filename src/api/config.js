@@ -1,6 +1,7 @@
 // API configuration
 export const API_CONFIG = {
-  BASE_URL: "http://localhost:5000",
+  BASE_URL: "https://truvis.onrender.com",
+  // BASE_URL: "http://localhost:5000",
   ENDPOINTS: {
     AUTH: {
       LOGIN: "/auth/login",

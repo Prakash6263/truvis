@@ -112,7 +112,7 @@ const Header = () => {
                   ) : (
                     <div className="nav-btn">
                       <span className="text-white me-3">Welcome, {user?.name}</span>
-                      <a href="/ai-compliance" className="theme-btn">
+                      <a href="/dashboard" className="theme-btn">
                         Dashboard
                       </a>
                     </div>

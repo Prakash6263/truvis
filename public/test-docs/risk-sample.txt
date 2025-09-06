@@ -1,0 +1,65 @@
+Customer Banking Portal — Risk Brief
+Generated: PLACEHOLDER_TIMESTAMP
+
+System Overview
+- Primary Function: Customer account access, balance view, fund transfers, card management.
+- Environment: Public internet access via a responsive web application.
+- Users: Retail customers and internal support agents.
+
+Technology Stack
+- Frontend: React 18, Tailwind CSS, served via CDN.
+- Backend: Node.js 20 (Express), REST APIs.
+- Database: PostgreSQL 14 for transactional data; Redis for sessions.
+- Infra: Kubernetes on managed cloud, NGINX ingress, Cloud WAF enabled.
+- Third-Parties: Payment Processor (PCI-DSS scope), Email/SMS provider.
+
+Data Classification & Stores
+- PII: Full name, email, phone (moderate sensitivity).
+- Sensitive: Account numbers, transaction history (high sensitivity).
+- Secrets: API keys managed in cloud secret manager.
+- Logs: Centralized in ELK; some fields partially masked.
+
+Authentication & Authorization
+- Auth: Username/password; MFA enforced for admins. Customer MFA rollout planned within 6 months.
+- Sessions: HTTP-only secure cookies; 24h expiry.
+- RBAC: Customer, Support Agent, Admin roles.
+
+Security Controls
+- Transport: TLS 1.2+ enforced; HSTS enabled.
+- At-Rest: Volume-level encryption via cloud provider. Field-level encryption for PII is not yet implemented.
+- WAF: Managed rules active; custom rules for credential stuffing not tuned yet.
+- Scanning: Weekly SAST; monthly DAST. Container images scanned on push.
+- Backups: Nightly; restore tested quarterly.
+
+Third-Party & Compliance
+- Payment Processor: PCI-DSS SAQ A-EP evidence pending. Current 3rd-party audit report status is unclear.
+- Email/SMS: DPA signed; geo EU; verification pending.
+- Privacy: DSAR handled by separate service; data retention policy 7 years.
+
+Known Gaps & Assumptions (Intentionally Ambiguous)
+- Field-level encryption for PII is planned but not implemented (Q4 target).
+- MFA for all customers in staged rollout; exact completion date TBD.
+- Incident runbooks draft exists; tabletop exercise not yet performed.
+- Cloud WAF custom rules for credential-stuffing are not tuned.
+- Vendor audit status for the payment processor pending confirmation.
+
+Representative Use Cases
+- Customer signs in and views balances.
+- Customer transfers funds between accounts.
+- Customer updates profile and requests statement export.
+
+Suggested Clarification Themes (for AI)
+- Encryption at rest for sensitive fields (None, Volume-only, Field-level, Tokenization).
+- Third-party vendor audit status (Not started, In progress, Completed, Unknown).
+- MFA rollout timeline (0–3 months, 3–6 months, 6–12 months, Unknown).
+- PII masking in logs (None, Partial, Full, Unknown).
+
+Embedded JSON Metadata
+{
+  "system": {"name":"Customer Banking Portal","env":"prod","pii":["name","email","phone"],"sensitive":["account_number","transactions"]},
+  "security":{"tls":"1.2+","hsts":true,"encryption_at_rest":"volume-only","field_level_encryption":false,"waf":{"managed":true,"custom_rules":"not_tuned"},"mfa":{"admins":true,"customers_rollout_months":6}},
+  "third_party":{"payment_processor_audit":"unknown","email_sms_geo":"eu","dpa_signed":true},
+  "gaps":["field_level_encryption_missing","waf_custom_rules_not_tuned","vendor_audit_unknown"]
+}
+
+Note: This text mirrors the PDF content. If needed, paste into Google Docs or Word and export as PDF for upload.

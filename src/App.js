@@ -24,6 +24,7 @@ import AccountSettings from "./pages/AccountSettings"
 import CoinManagement from "./pages/coin-management"
 import Buycoin from "./pages/Buycoin"
 import PricingPlans from "./pages/PricingPlans"
+import RiskManagement from "./pages/RiskManagement"
 
 function App() {
   return (
@@ -130,6 +131,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <RiskManagementChat />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/risk-management"
+            element={
+              <ProtectedRoute>
+                <RiskManagement />
               </ProtectedRoute>
             }
           />

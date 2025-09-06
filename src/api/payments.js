@@ -1,4 +1,5 @@
-const API_BASE = "http://localhost:5000"
+const API_BASE = "https://truvis.onrender.com"
+// const API_BASE = "http://localhost:5000"
 
 // Read the JWT from localStorage for testing. Set it via:
 // localStorage.setItem("authToken", "YOUR_JWT_HERE")
