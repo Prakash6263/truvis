@@ -1,34 +1,64 @@
-// "use client"
 
-// import { useState } from "react"
+// import { useEffect, useState } from "react"
+// import { useNavigate } from "react-router-dom"
+// import { getDashboard, listAssessments, downloadAssessmentReport } from "../api/risk"
 // import Sidebar from "../components/Sidebar"
 // import TopBar from "../components/TopBar"
-// import { Link, useNavigate } from "react-router-dom"
 
 // const RiskManagementFinal = () => {
-//   const [itemsPerPage, setItemsPerPage] = useState(10)
 //   const navigate = useNavigate()
+//   const [itemsPerPage, setItemsPerPage] = useState(10)
+//   const [metrics, setMetrics] = useState({
+//     totalAssessments: 0,
+//     totalRisks: 0,
+//     top5HighRisks: [], // Updated to match backend response
+//     chartData: [], // Updated to match backend response
+//   })
+//   const [assessments, setAssessments] = useState([])
+//   const [loading, setLoading] = useState(true)
 
-//   const assessmentData = [
-//     {
-//       id: "A1",
-//       date: "10-10-2024",
-//       lastUpdated: "10-10-2024",
-//       system: "High",
-//     },
-//     {
-//       id: "A2",
-//       date: "10-10-2024",
-//       lastUpdated: "10-10-2024",
-//       system: "Low",
-//     },
-//     {
-//       id: "A3",
-//       date: "10-10-2024",
-//       lastUpdated: "10-10-2024",
-//       system: "Mid",
-//     },
-//   ]
+//   useEffect(() => {
+//     const fetchData = async () => {
+//       try {
+//         setLoading(true)
+
+//         const dashboardRes = await getDashboard()
+//         console.log("[v0] Dashboard response:", dashboardRes)
+//         setMetrics({
+//           totalAssessments: dashboardRes?.data?.totalAssessments || 0,
+//           totalRisks: dashboardRes?.data?.totalRisks || 0,
+//           top5HighRisks: dashboardRes?.data?.top5HighRisks || [],
+//           chartData: dashboardRes?.data?.chartData || [],
+//         })
+
+//         const assessmentsRes = await listAssessments({ page: 1, limit: itemsPerPage })
+//         console.log("[v0] Assessments response:", assessmentsRes)
+//         setAssessments(assessmentsRes?.data || [])
+//       } catch (error) {
+//         console.error("[v0] Error fetching dashboard data:", error)
+//       } finally {
+//         setLoading(false)
+//       }
+//     }
+
+//     fetchData()
+//   }, [itemsPerPage])
+
+//   const handleNewAssessment = () => navigate("/risk-management-chat")
+
+//   const handleDownload = async () => {
+//     const scopeId = typeof window !== "undefined" ? localStorage.getItem("scopeId") : null
+//     if (!scopeId) {
+//       alert("No assessment selected")
+//       return
+//     }
+//     try {
+//       await downloadAssessmentReport(scopeId)
+//     } catch (error) {
+//       console.error("[v0] Download error:", error)
+//       alert("Failed to download report")
+//     }
+//   }
 
 //   const getBadgeClass = (level) => {
 //     switch (level.toLowerCase()) {
@@ -37,14 +67,30 @@
 //       case "low":
 //         return "badge-low"
 //       case "mid":
+//       case "medium":
 //         return "badge-mid"
 //       default:
 //         return "badge-mid"
 //     }
 //   }
 
-//   const handleNewAssessment = () => {
-//     navigate("/risk-management-chat")
+//   if (loading) {
+//     return (
+//       <main className="main">
+//         <Sidebar />
+//         <div className="main2">
+//           <TopBar />
+//           <div className="middle d-flex justify-content-center align-items-center" style={{ minHeight: "400px" }}>
+//             <div className="text-center">
+//               <div className="spinner-border text-primary" role="status">
+//                 <span className="visually-hidden">Loading...</span>
+//               </div>
+//               <p className="mt-2">Loading dashboard data...</p>
+//             </div>
+//           </div>
+//         </div>
+//       </main>
+//     )
 //   }
 
 //   return (
@@ -165,6 +211,20 @@
 //           border: none;
 //           margin-right: 10px;
 //         }
+
+//         .empty-state {
+//           text-align: center;
+//           color: #666;
+//           font-style: italic;
+//           padding: 20px;
+//         }
+
+//         .no-data-message {
+//           color: #888;
+//           font-size: 12px;
+//           text-align: center;
+//           padding: 10px;
+//         }
 //       `}</style>
 
 //       <main className="main">
@@ -176,9 +236,12 @@
 //           <div className="middle">
 //             <div className="container text-center">
 //               <div className="d-flex justify-content-between align-items-center mt-5 mb-4">
-//                 <Link to="/risk-management-step3" className="btn btn-outline-secondary btn-nav">
+//                 <button
+//                   className="btn btn-outline-secondary btn-nav"
+//                   onClick={() => navigate("/risk-management-step3")}
+//                 >
 //                   ← Back to Step 3
-//                 </Link>
+//                 </button>
 //                 <div>
 //                   <h4 className="mb-0">Risk Assessment Dashboard</h4>
 //                   <small className="text-muted">Assessment Complete - Final Results</small>
@@ -199,7 +262,7 @@
 //                       <i className="fa fa-check"></i>
 //                     </div>
 //                     <div>
-//                       <div className="metric-value">53,000</div>
+//                       <div className="metric-value">{metrics.totalAssessments.toLocaleString()}</div>
 //                       <div className="metric-label">Total Assessments Completed</div>
 //                     </div>
 //                   </div>
@@ -210,7 +273,7 @@
 //                       <i className="fa fa-exclamation-triangle"></i>
 //                     </div>
 //                     <div>
-//                       <div className="metric-value">2,300</div>
+//                       <div className="metric-value">{metrics.totalRisks.toLocaleString()}</div>
 //                       <div className="metric-label">Total Risks Identified</div>
 //                     </div>
 //                   </div>
@@ -223,28 +286,44 @@
 //                   <h6 className="mb-2">
 //                     Stats <small className="text-success">(+50) more in 2025</small>
 //                   </h6>
-//                   <div style={{ backgroundImage: "linear-gradient(#00c6a7, #1e4d92)" }}>
-//                     <canvas id="statsChart" height="100"></canvas>
-//                   </div>
+//                   {metrics.chartData.length > 0 ? (
+//                     <div style={{ backgroundImage: "linear-gradient(#00c6a7, #1e4d92)" }}>
+//                       <canvas id="statsChart" height="100"></canvas>
+//                     </div>
+//                   ) : (
+//                     <div
+//                       className="empty-state"
+//                       style={{
+//                         backgroundImage: "linear-gradient(#00c6a7, #1e4d92)",
+//                         minHeight: "200px",
+//                         display: "flex",
+//                         alignItems: "center",
+//                         justifyContent: "center",
+//                       }}
+//                     >
+//                       <div className="no-data-message" style={{ color: "white" }}>
+//                         No chart data available yet. Complete some assessments to see statistics.
+//                       </div>
+//                     </div>
+//                   )}
 //                 </div>
 //                 <div className="col-md-4">
 //                   <h6>Top 5 High-Severity Risk</h6>
 //                   <ul className="top-risk-list">
-//                     <li>
-//                       R001: Data Encryption <span className="badge-high">High</span>
-//                     </li>
-//                     <li>
-//                       R001: Data Encryption <span className="badge-high">High</span>
-//                     </li>
-//                     <li>
-//                       R001: Data Encryption <span className="badge-high">High</span>
-//                     </li>
-//                     <li>
-//                       R001: Data Encryption <span className="badge-high">High</span>
-//                     </li>
-//                     <li>
-//                       R001: Data Encryption <span className="badge-high">High</span>
-//                     </li>
+//                     {metrics.top5HighRisks.length > 0 ? (
+//                       metrics.top5HighRisks.map((risk, index) => (
+//                         <li key={index}>
+//                           <span>
+//                             {risk.id}: {risk.title}
+//                           </span>
+//                           <span className={getBadgeClass(risk.riskLevel)}>{risk.riskLevel}</span>
+//                         </li>
+//                       ))
+//                     ) : (
+//                       <li className="no-data-message">
+//                         No high-severity risks found. Complete risk assessments to see top risks here.
+//                       </li>
+//                     )}
 //                   </ul>
 //                 </div>
 //               </div>
@@ -264,19 +343,29 @@
 //                     </tr>
 //                   </thead>
 //                   <tbody>
-//                     {assessmentData.map((item, index) => (
-//                       <tr key={index}>
-//                         <td>
-//                           <input type="checkbox" />
-//                         </td>
-//                         <td>{item.id}</td>
-//                         <td>{item.date}</td>
-//                         <td>{item.lastUpdated}</td>
-//                         <td>
-//                           <span className={getBadgeClass(item.system)}>{item.system}</span>
+//                     {assessments.length > 0 ? (
+//                       assessments.map((item, index) => (
+//                         <tr key={index}>
+//                           <td>
+//                             <input type="checkbox" />
+//                           </td>
+//                           <td>{item.title}</td>
+//                           <td>{item.assessmentDate}</td>
+//                           <td>{item.lastUpdated}</td>
+//                           <td>
+//                             <span className={getBadgeClass(item.system)}>{item.system}</span>
+//                           </td>
+//                         </tr>
+//                       ))
+//                     ) : (
+//                       <tr>
+//                         <td colSpan="5" className="text-center">
+//                           <div className="no-data-message">
+//                             No assessments found. Click "New Assessment" to create your first risk assessment.
+//                           </div>
 //                         </td>
 //                       </tr>
-//                     ))}
+//                     )}
 //                   </tbody>
 //                 </table>
 //               </div>
@@ -295,7 +384,7 @@
 //                     <option value="20">20</option>
 //                     <option value="50">50</option>
 //                   </select>{" "}
-//                   1-10 of 200 items
+//                   1-{Math.min(itemsPerPage, assessments.length)} of {assessments.length} items
 //                 </span>
 //                 <nav>
 //                   <ul className="pagination pagination-sm mt-0 mb-0">
@@ -315,7 +404,7 @@
 
 //               {/* Download Button */}
 //               <div className="mt-3 text-end">
-//                 <button className="download-btn">
+//                 <button className="download-btn" onClick={handleDownload}>
 //                   <i className="fa fa-download me-1"></i> Download Report
 //                 </button>
 //               </div>
@@ -330,12 +419,16 @@
 //             if (typeof Chart !== 'undefined') {
 //               const ctx = document.getElementById('statsChart');
 //               if (ctx) {
+//                 const chartData = ${JSON.stringify(metrics.chartData)};
+//                 const chartValues = chartData.length > 0 ? chartData.map(d => d.value || 0) : [0];
+//                 const chartLabels = chartData.length > 0 ? chartData.map(d => d.month || '') : [''];
+                
 //                 new Chart(ctx.getContext('2d'), {
 //                   type: 'bar',
 //                   data: {
-//                     labels: Array(10).fill(''),
+//                     labels: chartLabels,
 //                     datasets: [{
-//                       data: [150, 80, 300, 100, 500, 450, 350, 400, 250, 150],
+//                       data: chartValues,
 //                       backgroundColor: function(context) {
 //                         const gradient = context.chart.ctx.createLinearGradient(0, 0, 0, 200);
 //                         gradient.addColorStop(0, '#ffffff');
@@ -368,41 +461,83 @@
 // export default RiskManagementFinal
 
 
-
 "use client"
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { getDashboard, listAssessments, downloadAssessmentReport } from "../api/risk"
 import Sidebar from "../components/Sidebar"
-import TopBar from "../components/TopBar"
 
 const RiskManagementFinal = () => {
   const navigate = useNavigate()
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
+  const [currentChatId, setCurrentChatId] = useState(null)
+  const [sidebarRefreshTrigger, setSidebarRefreshTrigger] = useState(0)
+  const roleModule = "risk"
+
   const [itemsPerPage, setItemsPerPage] = useState(10)
-  const [metrics, setMetrics] = useState({ totalAssessments: 0, totalRisks: 0, topRisks: [] })
+  const [metrics, setMetrics] = useState({
+    totalAssessments: 0,
+    totalRisks: 0,
+    top5HighRisks: [],
+    chartData: [],
+  })
   const [assessments, setAssessments] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  const toggleSidebar = () => {
+    setIsSidebarCollapsed(!isSidebarCollapsed)
+  }
+
+  const handleNewChat = () => {
+    setCurrentChatId(null)
+    setSidebarRefreshTrigger((prev) => prev + 1)
+  }
+
+  const handleChatSelect = (chatId) => {
+    setCurrentChatId(chatId)
+  }
 
   useEffect(() => {
-    getDashboard()
-      .then((res) =>
-        setMetrics({
-          totalAssessments: res?.data?.totalAssessments ?? res?.totalAssessments ?? 0,
-          totalRisks: res?.data?.totalRisks ?? res?.totalRisks ?? 0,
-          topRisks: res?.data?.topRisks ?? res?.topRisks ?? [],
-        }),
-      )
-      .catch((e) => console.error("[v0] dashboard error:", e.message))
+    const fetchData = async () => {
+      try {
+        setLoading(true)
 
-    listAssessments({ page: 1, limit: itemsPerPage })
-      .then((res) => setAssessments(res?.data?.items || res?.data || res?.assessments || []))
-      .catch((e) => console.error("[v0] assessments list error:", e.message))
+        const dashboardRes = await getDashboard()
+        console.log("[v0] Dashboard response:", dashboardRes)
+        setMetrics({
+          totalAssessments: dashboardRes?.data?.totalAssessments || 0,
+          totalRisks: dashboardRes?.data?.totalRisks || 0,
+          top5HighRisks: dashboardRes?.data?.top5HighRisks || [],
+          chartData: dashboardRes?.data?.chartData || [],
+        })
+
+        const assessmentsRes = await listAssessments({ page: 1, limit: itemsPerPage })
+        console.log("[v0] Assessments response:", assessmentsRes)
+        setAssessments(assessmentsRes?.data || [])
+      } catch (error) {
+        console.error("[v0] Error fetching dashboard data:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchData()
   }, [itemsPerPage])
 
   const handleNewAssessment = () => navigate("/risk-management-chat")
+
   const handleDownload = async () => {
-    const id = typeof window !== "undefined" ? localStorage.getItem("assessmentId") : null
-    if (!id) return alert("No assessment selected")
-    await downloadAssessmentReport(id)
+    const scopeId = typeof window !== "undefined" ? localStorage.getItem("scopeId") : null
+    if (!scopeId) {
+      alert("No assessment selected")
+      return
+    }
+    try {
+      await downloadAssessmentReport(scopeId)
+    } catch (error) {
+      console.error("[v0] Download error:", error)
+      alert("Failed to download report")
+    }
   }
 
   const getBadgeClass = (level) => {
@@ -412,10 +547,49 @@ const RiskManagementFinal = () => {
       case "low":
         return "badge-low"
       case "mid":
+      case "medium":
         return "badge-mid"
       default:
         return "badge-mid"
     }
+  }
+
+  if (loading) {
+    return (
+      <main className="main">
+        <Sidebar
+          isCollapsed={isSidebarCollapsed}
+          onToggle={toggleSidebar}
+          onNewChat={handleNewChat}
+          onChatSelect={handleChatSelect}
+          activeChatId={currentChatId}
+          refreshTrigger={sidebarRefreshTrigger}
+          roleModule={roleModule}
+        />
+        <div className="main2">
+          <div className="topbar mb-3">
+            <div>
+              <button className="btn btn-toggle-sidebar w-auto" id="sidebarToggle" onClick={toggleSidebar}>
+                <i className="fas fa-bars" />
+              </button>
+            </div>
+            <div className="right w-auto">
+              <button className="coin theme-btn">50 Coin</button>
+              <i className="fas fa-bell icon" />
+              <img src="assets/img/Avatar.png" className="rounded-circle" alt="User" />
+            </div>
+          </div>
+          <div className="middle d-flex justify-content-center align-items-center" style={{ minHeight: "400px" }}>
+            <div className="text-center">
+              <div className="spinner-border text-primary" role="status">
+                <span className="visually-hidden">Loading...</span>
+              </div>
+              <p className="mt-2">Loading dashboard data...</p>
+            </div>
+          </div>
+        </div>
+      </main>
+    )
   }
 
   return (
@@ -536,13 +710,46 @@ const RiskManagementFinal = () => {
           border: none;
           margin-right: 10px;
         }
+
+        .empty-state {
+          text-align: center;
+          color: #666;
+          font-style: italic;
+          padding: 20px;
+        }
+
+        .no-data-message {
+          color: #888;
+          font-size: 12px;
+          text-align: center;
+          padding: 10px;
+        }
       `}</style>
 
       <main className="main">
-        <Sidebar />
+        <Sidebar
+          isCollapsed={isSidebarCollapsed}
+          onToggle={toggleSidebar}
+          onNewChat={handleNewChat}
+          onChatSelect={handleChatSelect}
+          activeChatId={currentChatId}
+          refreshTrigger={sidebarRefreshTrigger}
+          roleModule={roleModule}
+        />
 
         <div className="main2">
-          <TopBar />
+          <div className="topbar mb-3">
+            <div>
+              <button className="btn btn-toggle-sidebar w-auto" id="sidebarToggle" onClick={toggleSidebar}>
+                <i className="fas fa-bars" />
+              </button>
+            </div>
+            <div className="right w-auto">
+              <button className="coin theme-btn">50 Coin</button>
+              <i className="fas fa-bell icon" />
+              <img src="assets/img/Avatar.png" className="rounded-circle" alt="User" />
+            </div>
+          </div>
 
           <div className="middle">
             <div className="container text-center">
@@ -573,7 +780,7 @@ const RiskManagementFinal = () => {
                       <i className="fa fa-check"></i>
                     </div>
                     <div>
-                      <div className="metric-value">{metrics.totalAssessments}</div>
+                      <div className="metric-value">{metrics.totalAssessments.toLocaleString()}</div>
                       <div className="metric-label">Total Assessments Completed</div>
                     </div>
                   </div>
@@ -584,7 +791,7 @@ const RiskManagementFinal = () => {
                       <i className="fa fa-exclamation-triangle"></i>
                     </div>
                     <div>
-                      <div className="metric-value">{metrics.totalRisks}</div>
+                      <div className="metric-value">{metrics.totalRisks.toLocaleString()}</div>
                       <div className="metric-label">Total Risks Identified</div>
                     </div>
                   </div>
@@ -597,18 +804,44 @@ const RiskManagementFinal = () => {
                   <h6 className="mb-2">
                     Stats <small className="text-success">(+50) more in 2025</small>
                   </h6>
-                  <div style={{ backgroundImage: "linear-gradient(#00c6a7, #1e4d92)" }}>
-                    <canvas id="statsChart" height="100"></canvas>
-                  </div>
+                  {metrics.chartData.length > 0 ? (
+                    <div style={{ backgroundImage: "linear-gradient(#00c6a7, #1e4d92)" }}>
+                      <canvas id="statsChart" height="100"></canvas>
+                    </div>
+                  ) : (
+                    <div
+                      className="empty-state"
+                      style={{
+                        backgroundImage: "linear-gradient(#00c6a7, #1e4d92)",
+                        minHeight: "200px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <div className="no-data-message" style={{ color: "white" }}>
+                        No chart data available yet. Complete some assessments to see statistics.
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <div className="col-md-4">
                   <h6>Top 5 High-Severity Risk</h6>
                   <ul className="top-risk-list">
-                    {metrics.topRisks.map((risk, index) => (
-                      <li key={index}>
-                        {risk.title} <span className={getBadgeClass(risk.severity)}>{risk.severity}</span>
+                    {metrics.top5HighRisks.length > 0 ? (
+                      metrics.top5HighRisks.map((risk, index) => (
+                        <li key={index}>
+                          <span>
+                            {risk.id}: {risk.title}
+                          </span>
+                          <span className={getBadgeClass(risk.riskLevel)}>{risk.riskLevel}</span>
+                        </li>
+                      ))
+                    ) : (
+                      <li className="no-data-message">
+                        No high-severity risks found. Complete risk assessments to see top risks here.
                       </li>
-                    ))}
+                    )}
                   </ul>
                 </div>
               </div>
@@ -628,19 +861,29 @@ const RiskManagementFinal = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {assessments.map((item, index) => (
-                      <tr key={index}>
-                        <td>
-                          <input type="checkbox" />
-                        </td>
-                        <td>{item.id}</td>
-                        <td>{item.date}</td>
-                        <td>{item.lastUpdated}</td>
-                        <td>
-                          <span className={getBadgeClass(item.system)}>{item.system}</span>
+                    {assessments.length > 0 ? (
+                      assessments.map((item, index) => (
+                        <tr key={index}>
+                          <td>
+                            <input type="checkbox" />
+                          </td>
+                          <td>{item.title}</td>
+                          <td>{item.assessmentDate}</td>
+                          <td>{item.lastUpdated}</td>
+                          <td>
+                            <span className={getBadgeClass(item.system)}>{item.system}</span>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="5" className="text-center">
+                          <div className="no-data-message">
+                            No assessments found. Click "New Assessment" to create your first risk assessment.
+                          </div>
                         </td>
                       </tr>
-                    ))}
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -659,7 +902,7 @@ const RiskManagementFinal = () => {
                     <option value="20">20</option>
                     <option value="50">50</option>
                   </select>{" "}
-                  1-10 of 200 items
+                  1-{Math.min(itemsPerPage, assessments.length)} of {assessments.length} items
                 </span>
                 <nav>
                   <ul className="pagination pagination-sm mt-0 mb-0">
@@ -694,12 +937,16 @@ const RiskManagementFinal = () => {
             if (typeof Chart !== 'undefined') {
               const ctx = document.getElementById('statsChart');
               if (ctx) {
+                const chartData = ${JSON.stringify(metrics.chartData)};
+                const chartValues = chartData.length > 0 ? chartData.map(d => d.value || 0) : [0];
+                const chartLabels = chartData.length > 0 ? chartData.map(d => d.month || '') : [''];
+                
                 new Chart(ctx.getContext('2d'), {
                   type: 'bar',
                   data: {
-                    labels: Array(10).fill(''),
+                    labels: chartLabels,
                     datasets: [{
-                      data: [150, 80, 300, 100, 500, 450, 350, 400, 250, 150],
+                      data: chartValues,
                       backgroundColor: function(context) {
                         const gradient = context.chart.ctx.createLinearGradient(0, 0, 0, 200);
                         gradient.addColorStop(0, '#ffffff');

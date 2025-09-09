@@ -97,7 +97,15 @@ import Swal from "sweetalert2"
 import { logout } from "../utils/auth"
 import { listChats, createChat, deleteChat } from "../api/chat"
 
-const Sidebar = ({ isCollapsed, onToggle, onNewChat, onChatSelect, activeChatId, refreshTrigger }) => {
+const Sidebar = ({
+  isCollapsed,
+  onToggle,
+  onNewChat,
+  onChatSelect,
+  activeChatId,
+  refreshTrigger,
+  roleModule, // Removed default "risk" value to make it truly dynamic
+}) => {
   const navigate = useNavigate()
   const [chats, setChats] = useState([])
   const [loading, setLoading] = useState(true)
@@ -126,7 +134,10 @@ const Sidebar = ({ isCollapsed, onToggle, onNewChat, onChatSelect, activeChatId,
 
   const handleNewChat = async () => {
     try {
-      const newChat = await createChat("New Chat")
+      const newChat = await createChat({
+        title: "New Chat",
+        roleModule: roleModule, // Uses dynamic roleModule passed from parent
+      })
       setChats((prev) => [newChat.chat, ...prev])
       if (onNewChat) {
         onNewChat(newChat.chat._id)
