@@ -1,9 +1,12 @@
+"use client"
+
 import { useEffect, useState } from "react"
 import { useNavigate, Link } from "react-router-dom"
 import { getReasoningLog, submitClarifications, getClarifications } from "../api/risk"
 import Sidebar from "../components/Sidebar"
 import TopBar from "../components/TopBar"
 import Swal from "sweetalert2"
+import { CirclesWithBar } from "react-loader-spinner"
 
 export default function RiskManagementStep2() {
   const navigate = useNavigate()
@@ -85,8 +88,8 @@ export default function RiskManagementStep2() {
         })
       }
 
-      const payload = { answers }
-      await submitClarifications(scopeId, payload)
+      console.log("[v0] Submitting clarifications with scopeId:", scopeId, "answers:", answers)
+      await submitClarifications(scopeId, answers)
       await Swal.fire({ icon: "success", title: "Clarifications submitted", timer: 1000, showConfirmButton: false })
       navigate("/risk-management-step3")
     } catch (e) {
@@ -121,11 +124,32 @@ export default function RiskManagementStep2() {
         <div className="main2">
           <TopBar />
           <div className="middle">
-            <div className="container text-center mt-5">
-              <div className="spinner-border text-primary" role="status">
-                <span className="visually-hidden">Loading...</span>
+            <div className="container text-center"></div>
+
+            <div className="form-card">
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  minHeight: "400px",
+                }}
+              >
+                <CirclesWithBar
+                        height="100"
+                        width="100"
+                        color="#3AC6BD"
+                        outerCircleColor="#3AC6BD"
+                        innerCircleColor="#3AC6BD"
+                        barColor="#3AC6BD"
+                        ariaLabel="circles-with-bar-loading"
+                        visible={true}
+                      />
+                <p style={{ marginTop: "20px", fontSize: "16px", color: "#333", fontWeight: "500" }}>
+                  Loading risk analysis...
+                </p>
               </div>
-              <p className="mt-3">Loading risk analysis...</p>
             </div>
           </div>
         </div>
@@ -195,6 +219,23 @@ export default function RiskManagementStep2() {
         .icon-question {
           margin-right: 8px;
         }
+
+        .answer-textarea {
+          width: 100%;
+          padding: 12px;
+          border: 1px solid #ccc;
+          border-radius: 6px;
+          font-family: 'Segoe UI', sans-serif;
+          font-size: 14px;
+          resize: vertical;
+          min-height: 80px;
+        }
+
+        .answer-textarea:focus {
+          outline: none;
+          border-color: var(--accent);
+          box-shadow: 0 0 0 3px rgba(58, 198, 189, 0.1);
+        }
       `}</style>
 
       <main className="main">
@@ -251,30 +292,12 @@ export default function RiskManagementStep2() {
                         <div key={q.id} className="mb-4">
                           <div className="question text-dark">{q.question}</div>
 
-                          <div>
-                            <label className="d-block mb-2">
-                              <input
-                                type="radio"
-                                name={`q_${q.id}`}
-                                value="yes"
-                                checked={answers[q.id] === "yes"}
-                                onChange={(e) => handleAnswerChange(q.id, e.target.value)}
-                                className="me-2"
-                              />
-                              Yes
-                            </label>
-                            <label className="d-block mb-2">
-                              <input
-                                type="radio"
-                                name={`q_${q.id}`}
-                                value="no"
-                                checked={answers[q.id] === "no"}
-                                onChange={(e) => handleAnswerChange(q.id, e.target.value)}
-                                className="me-2"
-                              />
-                              No
-                            </label>
-                          </div>
+                          <textarea
+                            className="answer-textarea"
+                            value={answers[q.id] || ""}
+                            onChange={(e) => handleAnswerChange(q.id, e.target.value)}
+                            placeholder="Enter your answer here..."
+                          />
                         </div>
                       ))}
                     </div>
@@ -301,4 +324,3 @@ export default function RiskManagementStep2() {
     </>
   )
 }
-

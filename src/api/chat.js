@@ -26,6 +26,7 @@ export async function getChat(id) {
 // ----------------------
 // 🟢 Create new chat
 // ----------------------
+
 export async function createChat({ title, firstMessage, roleModule }) {
   const res = await fetch(`${API_URL}/api/chats`, {
     method: "POST",

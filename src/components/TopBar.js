@@ -1,49 +1,56 @@
 "use client"
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
-import { getUserProfile } from "../api/auth"
+import { getWalletBalance } from "../api/auth"
 import { isAuthenticated } from "../utils/auth"
-const TopBar = ({ onSidebarToggle, onModeToggle }) => {
 
-  const [userData, setUserData] = useState(null)
+const TopBar = ({ onSidebarToggle, onModeToggle }) => {
+  const [coinBalance, setCoinBalance] = useState(0)
   const [loading, setLoading] = useState(true)
   const navigate = useNavigate()
 
-  useEffect(() => {
-    const fetchUserData = async () => {
-      if (!isAuthenticated()) {
-        setLoading(false)
-        return
-      }
-
-      try {
-        const { success, data } = await getUserProfile()
-
-        if (success) {
-          setUserData(data.user)
-        } else {
-          if (data.message === "Invalid or expired token") {
-            navigate("/login")
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching user profile:", error)
-      } finally {
-        setLoading(false)
-      }
+  const fetchWalletBalance = async () => {
+    if (!isAuthenticated()) {
+      setLoading(false)
+      return
     }
 
-    fetchUserData()
+    try {
+      const { success, data } = await getWalletBalance()
+
+      if (success) {
+        setCoinBalance(data.coins || 0)
+      } else {
+        if (data.message === "Invalid or expired token") {
+          navigate("/login")
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching wallet balance:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchWalletBalance()
+
+    const handleRefresh = () => {
+      fetchWalletBalance()
+    }
+
+    window.addEventListener("refreshWalletBalance", handleRefresh)
+
+    return () => {
+      window.removeEventListener("refreshWalletBalance", handleRefresh)
+    }
   }, [navigate])
 
-
-
-
   const handleClick = () => {
-    navigate("/account-settings"); // put your page route here
-  };
+    navigate("/account-settings")
+  }
 
-    const handleBackToHome = () => {
+  const handleBackToHome = () => {
     navigate("/plans")
   }
 
@@ -56,12 +63,11 @@ const TopBar = ({ onSidebarToggle, onModeToggle }) => {
       </div>
 
       <div className="right w-auto">
-        <button className="coin theme-btn" onClick={handleBackToHome}>{loading ? "Loading..." : `${userData?.credits || 0} Coin`}</button>
+        <button className="coin theme-btn" onClick={handleBackToHome}>
+          {loading ? "Loading..." : `${coinBalance} Coin`}
+        </button>
         <i className="fas fa-bell icon"></i>
-        <img src="assets/img/Avatar.png" className="rounded-circle" alt="User" onClick={handleClick}/>
-        {/* <button className="btn btn-sm btn-outline-dark" onClick={onModeToggle}>
-           🌓
-        </button> */}
+        <img src="assets/img/Avatar.png" className="rounded-circle" alt="User" onClick={handleClick} />
       </div>
     </div>
   )

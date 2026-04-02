@@ -1,24 +1,25 @@
+"use client"
 
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import Sidebar from "../components/AccountSidebar"
 import TopBar from "../components/AccountTopBar"
-import { getUserProfile, updateUserProfile } from "../api/auth"
+import { getUserProfile, updateUserProfile, getWalletHistory } from "../api/auth"
 import Swal from "sweetalert2"
 import PhoneInput from "react-phone-input-2"
 import "react-phone-input-2/lib/style.css"
-import { fetchMyPurchases } from "../api/plans"
 
 export default function AccountSettings() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [activeTab, setActiveTab] = useState("account")
   const [phone, setPhone] = useState("")
+  const [countryCode, setCountryCode] = useState("")
   const [loading, setLoading] = useState(false)
   const [profileLoading, setProfileLoading] = useState(true)
 
-  const [purchases, setPurchases] = useState([])
-  const [purchasesLoading, setPurchasesLoading] = useState(false)
-  const [purchasesError, setPurchasesError] = useState("")
+  const [history, setHistory] = useState([])
+  const [historyLoading, setHistoryLoading] = useState(false)
+  const [historyError, setHistoryError] = useState("")
 
   const navigate = useNavigate()
 
@@ -26,6 +27,7 @@ export default function AccountSettings() {
     name: "",
     email: "",
     phone: "",
+    country_code: "",
   })
 
   const handleBackToHome = () => {
@@ -36,27 +38,27 @@ export default function AccountSettings() {
     if (activeTab !== "coin-management") return
     let cancelled = false
 
-    async function loadPurchases() {
-      setPurchasesLoading(true)
-      setPurchasesError("")
+    async function loadWalletHistory() {
+      setHistoryLoading(true)
+      setHistoryError("")
       try {
-        const { success, history, message } = await fetchMyPurchases()
+        const { success, history: walletHistory, data } = await getWalletHistory()
         if (cancelled) return
         if (success) {
-          setPurchases(Array.isArray(history) ? history : [])
+          setHistory(Array.isArray(walletHistory) ? walletHistory : [])
         } else {
-          setPurchases([])
-          setPurchasesError(message || "Failed to fetch purchases")
+          setHistory([])
+          setHistoryError(data?.message || "Failed to fetch wallet history")
         }
       } catch (err) {
         if (cancelled) return
-        setPurchasesError(err?.message || "Network error")
+        setHistoryError(err?.message || "Network error")
       } finally {
-        if (!cancelled) setPurchasesLoading(false)
+        if (!cancelled) setHistoryLoading(false)
       }
     }
 
-    loadPurchases()
+    loadWalletHistory()
     return () => {
       cancelled = true
     }
@@ -67,13 +69,21 @@ export default function AccountSettings() {
       try {
         const { success, data } = await getUserProfile()
         if (success && data.user) {
-          setFormData({
-            name: data.user.name || "",
-            email: data.user.email || "",
-            phone: data.user.phone || "",
-          })
-          setPhone(data.user.phone || "")
-        } else {
+          const fullPhone =
+    data.user.country_code && data.user.phone
+      ? `${data.user.country_code}${data.user.phone}`
+      : ""
+
+  setFormData({
+    name: data.user.name || "",
+    email: data.user.email || "",
+    phone: data.user.phone || "",
+    country_code: data.user.country_code || "",
+  })
+
+  setPhone(fullPhone)
+          setCountryCode(data.user.country_code || "")
+        }else {
           if (data.message === "Invalid or expired token") {
             window.location.href = "/login"
             return
@@ -115,13 +125,20 @@ export default function AccountSettings() {
     }))
   }
 
-  const handlePhoneChange = (value) => {
-    setPhone(value)
-    setFormData((prev) => ({
-      ...prev,
-      phone: value,
-    }))
-  }
+const handlePhoneChange = (value, country) => {
+  const dialCode = `+${country.dialCode}`
+  const number = value.replace(country.dialCode, "")
+
+  setPhone(value)
+  setCountryCode(dialCode)
+
+  setFormData((prev) => ({
+    ...prev,
+    phone: number,
+    country_code: dialCode,
+  }))
+}
+
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -129,14 +146,17 @@ export default function AccountSettings() {
 
     try {
       const { success, data } = await updateUserProfile({
+        name: formData.name,
+        email: formData.email,
         phone: formData.phone || phone,
+        country_code: formData.country_code || countryCode,
       })
 
       if (success) {
         Swal.fire({
           icon: "success",
           title: "Success!",
-          text: "Profile updated successfully",
+          text: data.message || "Profile updated successfully",
           timer: 2000,
           showConfirmButton: false,
         })
@@ -180,14 +200,10 @@ export default function AccountSettings() {
           className="sidebar-overlay"
           onClick={toggleSidebar}
           style={{
-            // position: "fixed",
-            // top: 0,
-            // left: 0,
             width: "100%",
             height: "100%",
             backgroundColor: "rgba(0, 0, 0, 0.5)",
             zIndex: 998,
-            // Only show overlay on mobile/tablet
             display: typeof window !== "undefined" && window.innerWidth <= 768 ? "block" : "none",
           }}
         />
@@ -231,30 +247,21 @@ export default function AccountSettings() {
       font-size: 14px;
     }
 
-    /* Mobile & tablet */
     @media (max-width: 768px) {
       .sidebar { left: -300px; }
       .sidebar.collapsed { left: -300px; }
-      /* On small screens, content should start at the left edge */
       .main2 { margin-left: 0; }
     }
 
-    /* Desktop */
     @media (min-width: 769px) {
       .sidebar.collapsed { left: -300px; }
-
-      /* Default: when sidebar is visible, push content by sidebar width */
       .main2 {
         margin-left: var(--sidebar-width);
         transition: margin-left 0.3s ease;
       }
-
-      /* When the Sidebar has 'collapsed' class, remove the margin */
       .sidebar.collapsed + .main2 {
         margin-left: 0;
       }
-
-      /* Hide overlay on desktop */
       .sidebar-overlay {
         display: none !important;
       }
@@ -290,7 +297,6 @@ export default function AccountSettings() {
       padding: 0 11px;
     }
 
-    /* Keep Date column on one line so it doesn't wrap awkwardly */
     .table td:nth-child(2), .table th:nth-child(2) {
       white-space: nowrap;
     }
@@ -299,7 +305,6 @@ export default function AccountSettings() {
       />
 
       <main className="main">
-        {/* Ensure Sidebar root element has className 'sidebar' inside its component for the sibling selector to work */}
         <Sidebar collapsed={sidebarCollapsed} onToggle={toggleSidebar} />
         <div className="main2">
           <TopBar onToggleSidebar={toggleSidebar} />
@@ -374,18 +379,8 @@ export default function AccountSettings() {
                               name="name"
                               className="form-control"
                               value={formData.name}
-                              disabled={true}
-                              readOnly
-                              aria-readonly="true"
-                              tabIndex={-1}
-                              onFocus={(e) => e.target.blur()}
-                              autoComplete="off"
-                              style={{
-                                backgroundColor: "#f5f5f5",
-                                cursor: "not-allowed",
-                                pointerEvents: "none",
-                                userSelect: "none",
-                              }}
+                              onChange={handleInputChange}
+                              disabled={loading}
                             />
                           </div>
                           <div className="mb-3">
@@ -412,7 +407,7 @@ export default function AccountSettings() {
                           <div className="mb-3">
                             <label className="form-label">Phone Number</label>
                             <PhoneInput
-                              country={"us"}
+                              country={countryCode ? countryCode.replace("+", "") : "in"}
                               value={phone || formData.phone}
                               onChange={handlePhoneChange}
                               disabled={loading}
@@ -454,37 +449,35 @@ export default function AccountSettings() {
                           <table className="table align-middle mb-0">
                             <thead>
                               <tr>
-                                {/* <th>
-                                  <input type="checkbox" />
-                                </th> */}
-                                {/* <th>Transaction Id</th> */}
+                                <th>Transaction ID</th>
                                 <th>Date</th>
                                 <th>Amount</th>
-                                <th>Card Number</th>
+                                <th>Action</th>
+                                <th>Details</th>
                               </tr>
                             </thead>
                             <tbody>
-                              {purchasesLoading ? (
+                              {historyLoading ? (
                                 <tr>
                                   <td colSpan={5} className="text-center">
                                     <div className="spinner-border text-primary" role="status" />
                                   </td>
                                 </tr>
-                              ) : purchasesError ? (
+                              ) : historyError ? (
                                 <tr>
                                   <td colSpan={5} className="text-danger text-center">
-                                    {purchasesError}
+                                    {historyError}
                                   </td>
                                 </tr>
-                              ) : purchases.length === 0 ? (
+                              ) : history.length === 0 ? (
                                 <tr>
                                   <td colSpan={5} className="text-muted text-center">
-                                    No purchases found.
+                                    No transaction history found.
                                   </td>
                                 </tr>
                               ) : (
-                                purchases.map((p) => {
-                                  const dateStr = new Date(p?.purchasedAt || p?.createdAt).toLocaleString("en-US", {
+                                history.map((item, index) => {
+                                  const dateStr = new Date(item?.created_at).toLocaleString("en-US", {
                                     year: "numeric",
                                     month: "short",
                                     day: "2-digit",
@@ -492,14 +485,14 @@ export default function AccountSettings() {
                                     minute: "2-digit",
                                   })
                                   return (
-                                    <tr key={p._id}>
-                                      {/* <td>
-                                        <input type="checkbox" />
-                                      </td> */}
-                                      {/* <td>{p?.stripePaymentId || p?._id}</td> */}
+                                    <tr key={item?.transaction_id || index}>
+                                      <td>{item?.transaction_id || "-"}</td>
                                       <td>{dateStr}</td>
-                                      <td>{p?.amount ?? "-"}</td>
-                                      <td>{p?.card ?? "-"}</td>
+                                      <td>{item?.change_amount ? `${item.change_amount} coins` : "-"}</td>
+                                      <td>
+                                        <span className="badge bg-primary">{item?.action || "-"}</span>
+                                      </td>
+                                      <td>{item?.details || "-"}</td>
                                     </tr>
                                   )
                                 })
@@ -508,10 +501,9 @@ export default function AccountSettings() {
                           </table>
                         </div>
 
-                        {/* simple pagination footer */}
                         <div className="d-flex justify-content-between align-items-center mt-2">
                           <small className="text-dark">
-                            Showing {purchases.length > 0 ? `1-${purchases.length}` : "0"} of {purchases.length} items
+                            Showing {history.length > 0 ? `1-${history.length}` : "0"} of {history.length} items
                           </small>
                           <nav>
                             <ul className="pagination pagination-sm mb-0 mt-0">

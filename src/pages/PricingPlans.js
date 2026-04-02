@@ -5,6 +5,7 @@ import Sidebar from "../components/AccountSidebar"
 import TopBar from "../components/AccountTopBar"
 import { fetchPlans } from "../api/plans.js"
 import { Link } from "react-router-dom"
+import { CirclesWithBar } from "react-loader-spinner"
 
 export default function PricingPlans() {
   const [loading, setLoading] = useState(true)
@@ -12,8 +13,7 @@ export default function PricingPlans() {
   const [plans, setPlans] = useState(null)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
 
-
-      const toggleSidebar = () => {
+  const toggleSidebar = () => {
     setSidebarCollapsed((v) => !v)
   }
 
@@ -21,7 +21,10 @@ export default function PricingPlans() {
     let mounted = true
     ;(async () => {
       setLoading(true)
+      setError("")
+      // console.log("[v0] Fetching plans...")
       const result = await fetchPlans()
+      // console.log("[v0] Plans fetch result:", result)
       if (!mounted) return
       if (result.success) {
         setPlans(result.plans || [])
@@ -36,10 +39,6 @@ export default function PricingPlans() {
     }
   }, [])
 
-  // Premium (colorful/right) when isFree/isfree === true OR name === "Premium Plan"
-  // Free (white/left) when isFree/isfree === false; fallbacks keep previous behavior
-  const PREMIUM_NAME = "Premium Plan"
-
   const toNumber = (v) => {
     const n = Number(v)
     return Number.isNaN(n) ? null : n
@@ -50,59 +49,12 @@ export default function PricingPlans() {
   const hasFlagFalse = (p) =>
     p && (p.isFree === false || p.isfree === false || p.isFree === "false" || p.isfree === "false")
 
-  const isPremiumByName = (p) => typeof p?.name === "string" && /premium/i.test(p.name)
-  const isFreeByName = (p) => typeof p?.name === "string" && /free/i.test(p.name)
+  const isPremiumByName = (p) => typeof p?.name === "string" && /premium|pro|max|mini/i.test(p.name)
+  const isFreeByName = (p) => typeof p?.name === "string" && /free|basic|starter/i.test(p.name)
 
   const priceOf = (p) => (p ? toNumber(p.price) : null)
 
-  const pickPlans = (arr) => {
-    if (!Array.isArray(arr) || arr.length === 0) return { free: null, premium: null }
-
-    // Candidates
-    const premiumCandidates = arr.filter(
-      (p) => hasFlagTrue(p) || isPremiumByName(p) || (priceOf(p) !== null && priceOf(p) > 0),
-    )
-    const freeCandidates = arr.filter(
-      (p) => hasFlagFalse(p) || isFreeByName(p) || (priceOf(p) !== null && priceOf(p) === 0),
-    )
-
-    // Pick best premium (prefer explicit flag/name, then highest priced)
-    let premium =
-      premiumCandidates.find((p) => hasFlagTrue(p)) ||
-      premiumCandidates.find((p) => isPremiumByName(p)) ||
-      premiumCandidates.sort((a, b) => (priceOf(b) ?? -1) - (priceOf(a) ?? -1))[0] ||
-      null
-
-    // Pick best free (prefer explicit flag/name, then price==0)
-    let free =
-      freeCandidates.find((p) => hasFlagFalse(p)) ||
-      freeCandidates.find((p) => isFreeByName(p)) ||
-      freeCandidates.find((p) => priceOf(p) === 0) ||
-      null
-
-    // Ensure they are not the same object
-    if (premium && free && premium === free) {
-      // Try to find another distinct free
-      const altFree = arr.find((p) => p !== premium && (hasFlagFalse(p) || isFreeByName(p) || priceOf(p) === 0)) || null
-      if (altFree) free = altFree
-      else {
-        // Or another distinct premium
-        const altPremium =
-          arr.find((p) => p !== free && (hasFlagTrue(p) || isPremiumByName(p) || (priceOf(p) ?? 0) > 0)) || null
-        if (altPremium) premium = altPremium
-      }
-    }
-
-    return { free, premium }
-  }
-
-  const formatPrice = (value) => {
-    const n = toNumber(value)
-    if (n === null) return typeof value === "string" ? value : "$0"
-    return `$${n}`
-  }
-
-  const normalizeFeatures = (plan, fallback) => {
+  const normalizeFeatures = (plan, fallback = []) => {
     const src = plan && Array.isArray(plan.features) ? plan.features : null
     if (!src) return fallback
 
@@ -131,56 +83,60 @@ export default function PricingPlans() {
     })
   }
 
+  const allPlans = Array.isArray(plans) ? plans : []
 
-  // Also tolerate name hints and ensure the two cards never share the same object.
-  const paidPlan = Array.isArray(plans)
-    ? plans.find(
-        (p) => p?.isFree === true || p?.isfree === true || (typeof p?.name === "string" && /premium/i.test(p.name)),
-      ) || null
-    : null
+  // console.log("[v0] Displaying all plans:", allPlans)
 
-  const freePlan = Array.isArray(plans)
-    ? // prefer explicit false, or "free" in name, or price == 0, and make sure it's not the paid plan
-      plans.find(
-        (p) =>
-          p !== paidPlan &&
-          (p?.isFree === false ||
-            p?.isfree === false ||
-            (typeof p?.name === "string" && /free/i.test(p.name)) ||
-            Number(p?.price) === 0),
-      ) ||
-      // final fallback: any other plan that isn't paidPlan
-      plans.find((p) => p !== paidPlan) ||
-      null
-    : null
-
-
+  const formatPrice = (value) => {
+    const n = toNumber(value)
+    if (n === null) return typeof value === "string" ? value : "$0"
+    return `$${n}`
+  }
 
   return (
     <>
-      {/* Preloader */}
       {loading && (
-        <div className="preloader">
-          <div className="loader-ripple">
-            <div />
-            <div />
-          </div>
+        <div
+          className="preloader"
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            background: "rgba(255,255,255,0.95)",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 9999,
+          }}
+        >
+          <CirclesWithBar
+            height="100"
+            width="100"
+            color="#3AC6BD"
+            outerCircleColor="#3AC6BD"
+            innerCircleColor="#3AC6BD"
+            barColor="#3AC6BD"
+            ariaLabel="circles-with-bar-loading"
+            visible={true}
+          />
+          <p style={{ marginTop: "20px", fontSize: "16px", color: "#333", fontWeight: "500" }}>
+            Loading pricing plans...
+          </p>
         </div>
       )}
 
-          {!sidebarCollapsed && (
+      {!sidebarCollapsed && (
         <div
           className="sidebar-overlay"
           onClick={toggleSidebar}
           style={{
-            // position: "fixed",
-            // top: 0,
-            // left: 0,
             width: "100%",
             height: "100%",
             backgroundColor: "rgba(0, 0, 0, 0.5)",
             zIndex: 998,
-            // Only show overlay on mobile/tablet
             display: typeof window !== "undefined" && window.innerWidth <= 768 ? "block" : "none",
           }}
         />
@@ -260,36 +216,119 @@ export default function PricingPlans() {
     }
 
     .pricing-section { padding: 60px 20px; text-align: center; }
+    
     .pricing-card {
-      border-radius: 20px; padding: 40px 30px; background: #fff;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.08); transition: transform 0.3s;
+      border-radius: 16px;
+      padding: 40px 30px;
+      background: #fff;
+      box-shadow: 0 2px 20px rgba(0,0,0,0.06);
+      transition: all 0.3s ease;
+      border: 2px solid transparent;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
     }
-    .pricing-card:hover { transform: translateY(-5px); }
-    .pricing-card.active { background: #0fd1b0; color: #fff; position: relative; }
-    .pricing-card.active .btn { background: #fff; color: #0fd1b0; font-weight: 600; }
-    .pricing-card h2 { font-size: 42px; font-weight: bold; margin-bottom: 0; }
-    .pricing-card .price-text { font-size: 16px; color: #777; margin-bottom: 20px; }
-    .pricing-card ul { list-style: none; padding: 0; margin: 25px 0; text-align: left; }
-    .pricing-card ul li { margin-bottom: 12px; font-size: 15px; display: flex; align-items: center; }
-    .pricing-card ul li i { margin-right: 10px; }
-    .pricing-card.active ul li { color: #fff; }
-    .badge-choice {
-      position: absolute; top: -20px; right: -20px; background: #000; color: #fff;
-      font-size: 13px; padding: 6px 12px; border-radius: 20px;
+    .pricing-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 12px 32px rgba(0,0,0,0.12);
+      border-color: rgba(58, 198, 189, 0.3);
+    }
+    
+    .pricing-card.featured {
+      background: linear-gradient(135deg, #3AC6BD 0%, #2da89f 100%);
+      color: #fff;
+      position: relative;
+      border-color: #3AC6BD;
+    }
+    .pricing-card.featured .btn {
+      background: #fff;
+      color: #3AC6BD;
+      font-weight: 600;
+    }
+    .pricing-card.featured .btn:hover {
+      background: #f8f8f8;
+    }
+    
+    .plan-badge {
+      position: absolute;
+      top: -12px;
+      right: 20px;
+      background: #000;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 6px 16px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .plan-name {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    .pricing-card h2 {
+      font-size: 48px;
+      font-weight: bold;
+      margin: 16px 0 8px 0;
+      line-height: 1;
+    }
+    .pricing-card .price-text {
+      font-size: 15px;
+      color: #777;
+      margin-bottom: 24px;
+      font-weight: 500;
+    }
+    .pricing-card.featured .price-text {
+      color: rgba(255,255,255,0.9);
+    }
+    
+    .plan-description {
+      font-size: 14px;
+      line-height: 1.6;
+      margin-bottom: 24px;
+      flex-grow: 1;
+      color: #666;
+    }
+    .pricing-card.featured .plan-description {
+      color: rgba(255,255,255,0.95);
+    }
+    
+    .pricing-card ul {
+      list-style: none;
+      padding: 0;
+      margin: 25px 0;
+      text-align: left;
+    }
+    .pricing-card ul li {
+      margin-bottom: 14px;
+      font-size: 15px;
+      display: flex;
+      align-items: flex-start;
+      line-height: 1.5;
+    }
+    .pricing-card ul li i {
+      margin-right: 12px;
+      margin-top: 2px;
+      font-size: 16px;
+    }
+    .pricing-card.featured ul li {
+      color: #fff;
     }
           `,
         }}
       />
       <main className="main">
-        {/* Sidebar */}
         <Sidebar collapsed={sidebarCollapsed} onToggle={toggleSidebar} />
-        {/* Main Area */}
         <div className="main2">
           <TopBar />
           <div className="middle">
             <section className="pricing-section">
               <div className="container">
-                {/* Heading */}
                 <h2 className="fw-bold">
                   Start today, with free or
                   <br />
@@ -300,64 +339,71 @@ export default function PricingPlans() {
                   <br /> your wallet easily without any problem.
                 </p>
 
-                {loading && <div style={{ padding: 16, textAlign: "center" }}>Loading plans...</div>}
                 {!loading && error && <div style={{ padding: 16, textAlign: "center", color: "crimson" }}>{error}</div>}
+
                 {!loading && !error && (
                   <div className="row justify-content-center g-4">
-                    {/* Basic Plan */}
-                    <div className="col-md-4">
-                      <div className="pricing-card h-100">
-                        <h2 className="">{formatPrice(freePlan?.price ?? 0)}</h2>
-                        <p className="price-text">Per month</p>
-                        <p className="text-muted">
-                          {freePlan?.description ||
-                            "Joy horrible moreover man feelings own shy. Request norland neither mistake for yet. Between the for morning assured."}
-                        </p>
-                        <ul>
-                          {normalizeFeatures(freePlan).map((f, i) => (
-                            <li key={i}>
-                              <i className={`fa ${f.available ? "fa-check text-success" : "fa-times text-danger"}`} />{" "}
-                              {f.label}
-                            </li>
-                          ))}
-                        </ul>
-                        <Link
-                          to="/dashboard"
-                          className="btn btn-outline-dark rounded-pill px-4"
-                        >
-                          Join for free
-                        </Link>
+                    {allPlans.length === 0 ? (
+                      <div className="col-12">
+                        <p className="text-muted">No pricing plans available at the moment.</p>
                       </div>
-                    </div>
-                    {/* Premium Plan */}
-                    <div className="col-md-4">
-                      <div className="pricing-card active h-100">
-                        <span className="badge-choice mb-2">{paidPlan?.name || "Premium Plan"}</span>
-                        <h2 className="text-white">{formatPrice(paidPlan?.price ?? 49)}</h2>
-                        <p className="price-text text-white">Per month</p>
-                        <p>
-                          {paidPlan?.description ||
-                            "Oven even feet time have an oat. Relation so in confined smallest children unpacked delicate. Why sir end believe."}
-                        </p>
-                        <ul>
-                          {normalizeFeatures(paidPlan).map((f, i) => (
-                            <li key={i}>
-                              <i className={`fa ${f.available ? "fa-check" : "fa-times"}`} /> {f.label}
-                            </li>
-                          ))}
-                        </ul>
-                        <a
-                          href={
-                            paidPlan
-                              ? `/buy-coin?planId=${encodeURIComponent(paidPlan._id || paidPlan.id || "")}`
-                              : "/buy-coin"
-                          }
-                          className="btn rounded-pill px-4"
-                        >
-                          Get the premium
-                        </a>
-                      </div>
-                    </div>
+                    ) : (
+                      allPlans.map((plan, index) => {
+                        const isFeatured =
+                          plan.isFree === false || plan.isfree === false || (plan.price && Number(plan.price) > 0)
+                        const planId = plan.id || plan._id || `plan-${index}`
+
+                        return (
+                          <div key={planId} className="col-md-6 col-lg-4">
+                            <div className={`pricing-card ${isFeatured ? "featured" : ""}`}>
+                              {isFeatured && <span className="plan-badge">Popular</span>}
+
+                              <div className="plan-name">{plan.name || "Plan"}</div>
+
+                              <h2>{formatPrice(plan.price ?? 0)}</h2>
+                              <p className="price-text">Per month</p>
+
+                              <p className="plan-description">
+                                {plan.description ||
+                                  "Get started with our flexible pricing plan tailored to your needs."}
+                              </p>
+
+                              <ul>
+                                {normalizeFeatures(plan, [{ label: "Basic features included", available: true }]).map(
+                                  (f, i) => (
+                                    <li key={i}>
+                                      <i
+                                        className={`fa ${f.available ? "fa-check text-success" : "fa-times text-danger"}`}
+                                      />
+                                      <span>{f.label}</span>
+                                    </li>
+                                  ),
+                                )}
+                              </ul>
+
+                              {isFeatured ? (
+                                <a
+                                  // href={`/buy-coin?planId=${encodeURIComponent(planId)}`}
+                                   href={`/wallet?planId=${encodeURIComponent(planId)}`}
+                                  className="btn rounded-pill px-4"
+                                  style={{ marginTop: "auto" }}
+                                >
+                                  Get {plan.name || "Premium"}
+                                </a>
+                              ) : (
+                                <Link
+                                  to="/dashboard"
+                                  className="btn btn-outline-dark rounded-pill px-4"
+                                  style={{ marginTop: "auto" }}
+                                >
+                                  Get Started
+                                </Link>
+                              )}
+                            </div>
+                          </div>
+                        )
+                      })
+                    )}
                   </div>
                 )}
               </div>

@@ -9,7 +9,6 @@ import Preloader from "../components/Preloader"
 import ScrollTop from "../components/ScrollTop"
 import { Link } from "react-router-dom"
 import { registerUser } from "../api/auth"
-import { setToken, setUser } from "../utils/auth"
 
 const Signup = () => {
   const [formData, setFormData] = useState({
@@ -48,21 +47,16 @@ const Signup = () => {
 
       console.log("[v0] API Response:", { success, data })
 
-      if (success && data.status === "success") {
-        // Store token and user data
-        setToken(data.token)
-        setUser(data.user)
-
-        // Show success message
+      if (success) {
         await Swal.fire({
           icon: "success",
-          title: "Welcome!",
-          text: `Account created successfully for ${data.user.name}!`,
-          confirmButtonText: "Continue",
+          title: "Account Created!",
+          text: "Your account has been created successfully. Please log in to continue.",
+          confirmButtonText: "Go to Login",
         })
 
-        // Redirect to dashboard
-        navigate("/ai-compliance")
+        // Redirect to login page, not dashboard
+        navigate("/login")
       } else {
         // Show error message
         await Swal.fire({

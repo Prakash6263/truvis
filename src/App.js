@@ -1,30 +1,31 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom"
-import About from "./pages/About"
-import AICompliance from "./pages/AICompliance"
-import AuditCompliance from "./pages/AuditCompliance"
-import AuditComplianceStep1 from "./pages/AuditComplianceStep1"
-import AuditComplianceStep2 from "./pages/AuditComplianceStep2"
-import AuditComplianceStep3 from "./pages/AuditComplianceStep3"
-import AuditComplianceStep4 from "./pages/AuditComplianceStep4"
-import Home from "./pages/Home"
-import Login from "./pages/Login"
-import Register from "./pages/Register"
-import Chat from "./pages/Chat"
-import Privacy from "./pages/Privacy"
-import Disclaimer from "./pages/Disclaimer"
-import Terms from "./pages/Terms"
-import Signup from "./pages/Signup"
-import RiskManagementStep3 from "./pages/RiskManagementStep3"
-import RiskManagementStep2 from "./pages/RiskManagementStep2"
-import RiskManagementFinal from "./pages/RiskManagementFinal"
-import RiskManagementChat from "./pages/RiskManagementChat"
-import ProtectedRoute from "./components/ProtectedRoute"
-import AuthRoute from "./components/AuthRoute"
-import AccountSettings from "./pages/AccountSettings"
-import CoinManagement from "./pages/coin-management"
-import Buycoin from "./pages/Buycoin"
-import PricingPlans from "./pages/PricingPlans"
-import RiskManagement from "./pages/RiskManagement"
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import About from "./pages/About";
+import AICompliance from "./pages/AICompliance";
+import AuditCompliance from "./pages/AuditCompliance";
+import AuditComplianceStep1 from "./pages/AuditComplianceStep1";
+import AuditComplianceStep2 from "./pages/AuditComplianceStep2";
+import AuditComplianceStep3 from "./pages/AuditComplianceStep3";
+import AuditComplianceStep4 from "./pages/AuditComplianceStep4";
+import Home from "./pages/Home";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import Chat from "./pages/Chat";
+import Privacy from "./pages/Privacy";
+import Disclaimer from "./pages/Disclaimer";
+import Terms from "./pages/Terms";
+import Signup from "./pages/Signup";
+import RiskManagementStep3 from "./pages/RiskManagementStep3";
+import RiskManagementStep2 from "./pages/RiskManagementStep2";
+import RiskManagementFinal from "./pages/RiskManagementFinal";
+import RiskManagementChat from "./pages/RiskManagementChat";
+import ProtectedRoute from "./components/ProtectedRoute";
+import AuthRoute from "./components/AuthRoute";
+import AccountSettings from "./pages/AccountSettings";
+import CoinManagement from "./pages/coin-management";
+import Buycoin from "./pages/Buycoin";
+import PricingPlans from "./pages/PricingPlans";
+import RiskManagement from "./pages/RiskManagement";
+import Wallet from "./pages/Wallet";
 
 function App() {
   return (
@@ -157,7 +158,6 @@ function App() {
                 <AccountSettings />
               </ProtectedRoute>
             }
-            
           />
           <Route
             path="/buy-coin"
@@ -166,7 +166,6 @@ function App() {
                 <Buycoin />
               </ProtectedRoute>
             }
-            
           />
           <Route
             path="/coin-management"
@@ -192,10 +191,18 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/wallet"
+            element={
+              <ProtectedRoute>
+                <Wallet />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
       </div>
     </Router>
-  )
+  );
 }
 
-export default App
+export default App;

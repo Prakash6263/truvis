@@ -21,6 +21,7 @@ export function hasSavedCardLocal() {
     return false
   }
 }
+
 export function markSavedCardLocal(value = true) {
   try {
     if (typeof localStorage !== "undefined") {
@@ -34,7 +35,7 @@ export async function apiCreateCustomer() {
   const token = getAuthToken()
   if (!token)
     throw new Error("Missing auth token. Set localStorage.setItem('token', '<JWT>') before calling payments APIs.")
-  const res = await fetch(`${API_BASE}/payments/create-customer`, {
+  const res = await fetch(`${API_BASE}/wallet/create-payment-intent`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -50,9 +51,10 @@ export async function apiCreateCustomer() {
 // 2) POST /payments/save-card  -> returns { clientSecret }
 export async function apiSaveCard() {
   const token = getAuthToken()
+  console.log("apiSaveCard-token",token)
   if (!token)
     throw new Error("Missing auth token. Set localStorage.setItem('token', '<JWT>') before calling payments APIs.")
-  const res = await fetch(`${API_BASE}/payments/save-card`, {
+  const res = await fetch(`${API_BASE}/wallet/saved-cards`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,

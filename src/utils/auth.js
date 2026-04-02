@@ -3,8 +3,13 @@ export const getToken = () => {
 }
 
 export const getUser = () => {
-  const user = localStorage.getItem("user")
-  return user ? JSON.parse(user) : null
+  try {
+    const user = localStorage.getItem("user")
+    return user ? JSON.parse(user) : null
+  } catch (error) {
+    console.error("[v0] Error parsing user data:", error)
+    return null
+  }
 }
 
 export const isAuthenticated = () => {
@@ -27,8 +32,16 @@ export const setUser = (user) => {
 
 export const getAuthHeaders = () => {
   const token = getToken()
-  return {
+  const headers = {
     "Content-Type": "application/json",
-    Authorization: `Bearer ${token}`,
   }
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`
+    console.log("[v0] Token found, adding Authorization header")
+  } else {
+    console.warn("[v0] No token found in localStorage")
+  }
+
+  return headers
 }

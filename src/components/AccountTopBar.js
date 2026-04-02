@@ -2,13 +2,25 @@
 
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
-import { getUserProfile } from "../api/auth"
+import { getUserProfile, getWalletBalance } from "../api/auth"
 import { isAuthenticated } from "../utils/auth"
 
-export default function TopBar({ onToggleSidebar }) {
+export default function TopBar({ onToggleSidebar, refreshBalance }) {
   const [userData, setUserData] = useState(null)
+  const [coinBalance, setCoinBalance] = useState(0)
   const [loading, setLoading] = useState(true)
   const navigate = useNavigate()
+
+  const fetchWalletBalance = async () => {
+    try {
+      const { success, data } = await getWalletBalance()
+      if (success) {
+        setCoinBalance(data.coins)
+      }
+    } catch (error) {
+      console.error("Error fetching wallet balance:", error)
+    }
+  }
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -27,6 +39,8 @@ export default function TopBar({ onToggleSidebar }) {
             navigate("/login")
           }
         }
+
+        await fetchWalletBalance()
       } catch (error) {
         console.error("Error fetching user profile:", error)
       } finally {
@@ -37,10 +51,15 @@ export default function TopBar({ onToggleSidebar }) {
     fetchUserData()
   }, [navigate])
 
+  useEffect(() => {
+    if (refreshBalance) {
+      fetchWalletBalance()
+    }
+  }, [refreshBalance])
+
   const handleBackToHome = () => {
     navigate("/plans")
   }
-
 
   return (
     <div className="topbar mb-3">
@@ -64,7 +83,9 @@ export default function TopBar({ onToggleSidebar }) {
         </button>
       </div>
       <div className="right w-auto">
-        <button className="coin theme-btn" onClick={handleBackToHome}>{loading ? "Loading..." : `${userData?.credits || 0} Coin`}</button>
+        <button className="coin theme-btn" onClick={handleBackToHome}>
+          {loading ? "Loading..." : `${coinBalance} Coin`}
+        </button>
         <a href="#">
           <span className="fw-semibold">
             <i className="fas fa-user icon" />

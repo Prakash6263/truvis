@@ -1,4 +1,4 @@
-const API_URL = process.env.REACT_APP_API_URL || "https://truvis.onrender.com"
+const API_URL = process.env.REACT_APP_API_URL || "https://aitechnotech.in/Truvis"
 // const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000"
 
 const getAuthHeaders = () => {
@@ -12,38 +12,54 @@ const getAuthHeaders = () => {
 export const createAssessment = async (payload, files) => {
   const formData = new FormData()
 
-  // Map fields to new API structure
-  formData.append("riskName", payload.title || payload.systemName || "")
-  formData.append("system_name", payload.systemName || "")
-  formData.append("business_function", payload.businessFunction || "")
-  formData.append("technical_functions", payload.technicalFunction || "")
-  formData.append("scope_details", payload.useCases || "")
-  formData.append("additional_info", payload.additionalInfo || "")
+  formData.append("systemm_name", payload.systemName || "")
+  formData.append("system_information", payload.technicalFunction || "")
+  formData.append("business_impact_analysis", payload.businessFunction || "")
+  formData.append("system_business_function", payload.systemBusinessFunction || "")
+  formData.append("system_usecase", payload.useCases || "")
+  formData.append("additional_information", payload.additionalInfo || "")
 
   // Add file if present
   if (files && files.length > 0) {
     formData.append("documentation", files[0])
   }
 
-  const response = await fetch(`${API_URL}/api/riskapi`, {
+  const token = localStorage.getItem("token")
+  console.log("[v0] Creating assessment with token:", token ? "Token present" : "NO TOKEN")
+
+  const headers = {}
+  if (token) {
+    headers.Authorization = `Bearer ${token}`
+    console.log("[v0] Authorization header added")
+  } else {
+    console.error("[v0] ERROR: No token found for API request")
+  }
+
+  const response = await fetch(`${API_URL}/scope`, {
     method: "POST",
-    headers: {
-      ...(localStorage.getItem("token") && { Authorization: `Bearer ${localStorage.getItem("token")}` }),
-    },
+    headers,
     body: formData,
   })
 
   if (!response.ok) {
+    console.error("[v0] API error response:", response.status, response.statusText)
     throw new Error(`HTTP error! status: ${response.status}`)
   }
 
   const data = await response.json()
-  const scopeId = data.data?.response?.scope_id || data.scope_id
-  return { id: scopeId, scope_id: scopeId, ...data }
+
+  const scopeId = data.scope_id
+  return {
+    id: scopeId,
+    scope_id: scopeId,
+    status: data.status,
+    next_step: data.next_step,
+    ...data,
+  }
 }
 
 export const getReasoningLog = async (scopeId) => {
-  const response = await fetch(`${API_URL}/api/riskapi/${scopeId}/analysis`, {
+  const response = await fetch(`${API_URL}/analysis/${scopeId}`, {
     method: "POST",
     headers: {
       Accept: "application/json",
@@ -57,13 +73,13 @@ export const getReasoningLog = async (scopeId) => {
 
   const data = await response.json()
   return {
-    data: data.data?.analysis?.reasoning_log || [],
-    clarifications: data.data?.analysis?.clarifications || {},
+    data: data.analysis?.reasoning_log || [],
+    clarifications: data.analysis?.clarifications || {},
   }
 }
 
 export const getClarifications = async (scopeId) => {
-  const response = await fetch(`${API_URL}/api/riskapi/${scopeId}/analysis`, {
+  const response = await fetch(`${API_URL}/analysis/${scopeId}`, {
     method: "POST",
     headers: {
       Accept: "application/json",
@@ -76,33 +92,46 @@ export const getClarifications = async (scopeId) => {
   }
 
   const data = await response.json()
-  const clarifications = data.data?.analysis?.clarifications || {}
+  const clarifications = data.analysis?.clarifications || {}
 
-  // Convert clarifications object to array format for UI
-  const questionsArray = Object.entries(clarifications).map(([key, question]) => ({
-    id: key,
-    question: question,
-    type: "single",
-    options: [
-      { value: "yes", label: "Yes" },
-      { value: "no", label: "No" },
-    ],
-  }))
+  // Convert clarifications array to UI format
+  const questionsArray = Array.isArray(clarifications)
+    ? clarifications.map((question, index) => ({
+        id: index,
+        question: question,
+        type: "single",
+        options: [
+          { value: "yes", label: "Yes" },
+          { value: "no", label: "No" },
+        ],
+      }))
+    : Object.entries(clarifications).map(([key, question]) => ({
+        id: key,
+        question: question,
+        type: "single",
+        options: [
+          { value: "yes", label: "Yes" },
+          { value: "no", label: "No" },
+        ],
+      }))
 
   return { data: questionsArray }
 }
 
-export const submitClarifications = async (scopeId, payload) => {
-  const response = await fetch(`${API_URL}/api/riskapi/${scopeId}/clarifications`, {
+export const submitClarifications = async (scopeId, answers) => {
+  console.log("[v0] submitClarifications called with scopeId:", scopeId, "answers:", answers)
+
+  const response = await fetch(`${API_URL}/clarifications/${scopeId}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       ...(localStorage.getItem("token") && { Authorization: `Bearer ${localStorage.getItem("token")}` }),
     },
-    body: JSON.stringify(payload.answers),
+    body: JSON.stringify(answers),
   })
 
   if (!response.ok) {
+    console.error("[v0] API error response:", response.status, response.statusText)
     throw new Error(`HTTP error! status: ${response.status}`)
   }
 
@@ -175,7 +204,7 @@ export const getRiskAssessment = async (scopeId) => {
 }
 
 export const listRisks = async ({ assessmentId, page = 1, limit = 10 }) => {
-  const response = await fetch(`${API_URL}/truvis/risk-assessment/${assessmentId}`, {
+  const response = await fetch(`${API_URL}/risk-assessment/${assessmentId}`, {
     method: "POST",
     headers: getAuthHeaders(),
   })
@@ -200,12 +229,26 @@ export const completeAssessment = async (assessmentId) => {
   return Promise.resolve()
 }
 
-export const downloadAssessmentReport = async (assessmentId) => {
-  // Placeholder for downloading report
-  console.log("[v0] Downloading report for:", assessmentId)
-  alert("Report download functionality will be implemented")
+export const downloadReport = async (scopeId) => {
+  const response = await fetch(`${API_URL}/download-report/${scopeId}`, {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+      ...(localStorage.getItem("token") && { Authorization: `Bearer ${localStorage.getItem("token")}` }),
+    },
+  })
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`)
+  }
+
+  // Return the blob URL for download
+  const blob = await response.blob()
+  const url = window.URL.createObjectURL(blob)
+  return url
 }
 
+export const downloadAssessmentReport = downloadReport
 
 export const getDashboard = async () => {
   const response = await fetch(`${API_URL}/api/riskapi/stats/overview`, {
@@ -242,4 +285,83 @@ export const listAssessments = async ({ page = 1, limit = 10 }) => {
 
   // Return data in format expected by component
   return data.items || []
+}
+
+export const triggerRiskAssessment = async (scopeId) => {
+  const response = await fetch(`${API_URL}/risk-assessment/${scopeId}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      ...(localStorage.getItem("token") && { Authorization: `Bearer ${localStorage.getItem("token")}` }),
+    },
+  })
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`)
+  }
+
+  const data = await response.json()
+  console.log("[v0] Risk assessment triggered successfully:", data)
+
+  return {
+    scope_id: data.scope_id,
+    status: data.status,
+    message: data.message,
+    ...data,
+  }
+}
+
+export const getAssessmentStatus = async (scopeId) => {
+  const response = await fetch(`${API_URL}/status/${scopeId}`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      ...(localStorage.getItem("token") && { Authorization: `Bearer ${localStorage.getItem("token")}` }),
+    },
+  })
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`)
+  }
+
+  const data = await response.json()
+  console.log("[v0] Assessment status:", data)
+
+  return {
+    scope_id: data.scope_id,
+    status: data.status,
+    risk_register: data.risk_register || null,
+    ...data,
+  }
+}
+
+export const sendChatMessage = async (scopeId, userMessage) => {
+  const response = await fetch(`${API_URL}/chat/${scopeId}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      ...(localStorage.getItem("token") && { Authorization: `Bearer ${localStorage.getItem("token")}` }),
+    },
+    body: JSON.stringify({
+      user_message: userMessage,
+    }),
+  })
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`)
+  }
+
+  const data = await response.json()
+  console.log("[v0] Chat response:", data)
+
+  return {
+    scope_id: data.scope_id,
+    user_message: data.user_message,
+    assistant_reply: data.assistant_reply,
+    chat_history: data.chat_history || [],
+    ...data,
+  }
 }

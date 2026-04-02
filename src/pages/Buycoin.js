@@ -117,9 +117,11 @@ function PurchasePlanBox({ planId, onPurchased }) {
     }
     setPlanLoading(true)
     setMessage("")
+    console.log("[v0] Fetching plan by ID:", planId)
     fetchPlanById(planId)
       .then((res) => {
         if (!active) return
+        console.log("[v0] Plan fetch result:", res)
         if (res?.success && res?.plan) {
           setPlan(res.plan)
         } else {
@@ -129,6 +131,7 @@ function PurchasePlanBox({ planId, onPurchased }) {
       })
       .catch((err) => {
         if (!active) return
+        console.error("[v0] Plan fetch error:", err)
         setPlan(null)
         setMessage(err?.message || "Failed to load plan details.")
       })
@@ -145,9 +148,11 @@ function PurchasePlanBox({ planId, onPurchased }) {
     e?.preventDefault?.()
     setLoading(true)
     setMessage("")
+    console.log("[v0] Purchasing plan:", planId)
     try {
       const result = await buyPlan(planId)
-      if (result?.success || result?.status === true) {
+      console.log("[v0] Purchase result:", result)
+      if (result?.success || result?.status === true || result?.status === 1) {
         setCredits(result?.credits ?? null)
         setMessage(result?.message || "Plan purchased successfully.")
         onPurchased?.(result)
@@ -160,6 +165,7 @@ function PurchasePlanBox({ planId, onPurchased }) {
         }
       }
     } catch (err) {
+      console.error("[v0] Purchase error:", err)
       const msg = err?.message || "Failed to buy plan."
       setMessage(msg)
       if (/no saved card|save card first/i.test(msg)) {
@@ -175,9 +181,12 @@ function PurchasePlanBox({ planId, onPurchased }) {
       <h5 className="mb-3">Purchase Plan</h5>
 
       {planLoading ? (
-        <p className="text-muted" style={{ marginTop: -8 }}>
-          Loading plan details...
-        </p>
+        <div style={{ padding: "20px 0", textAlign: "center" }}>
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
+          <p className="text-muted mt-2">Loading plan details...</p>
+        </div>
       ) : plan ? (
         <div
           className="mb-3 text-start"
@@ -192,9 +201,6 @@ function PurchasePlanBox({ planId, onPurchased }) {
           <div style={{ marginBottom: 6 }}>
             <strong>Credits:</strong> {typeof plan.credits === "number" ? plan.credits : "—"}
           </div>
-          {/* <div style={{ marginBottom: 6 }}>
-            <strong>Free:</strong> {plan.isFree ? "Yes" : "No"}
-          </div> */}
           {plan.description ? (
             <div style={{ marginBottom: 6 }}>
               <strong>Description:</strong> <span className="text-muted">{plan.description}</span>
@@ -205,26 +211,19 @@ function PurchasePlanBox({ planId, onPurchased }) {
               <strong>Features:</strong>
               <ul style={{ margin: "6px 0 0 16px" }}>
                 {plan.features.map((f, i) => (
-                  <li key={i}>{f}</li>
+                  <li key={i}>{typeof f === "string" ? f : f.label || f.name || "Feature"}</li>
                 ))}
               </ul>
             </div>
           ) : null}
-          {/* {plan.createdAt ? (
-            <div style={{ marginBottom: 0 }}>
-              <strong>Created:</strong> {new Date(plan.createdAt).toLocaleString()}
-            </div>
-          ) : null} */}
         </div>
-      ) : null}
+      ) : message ? null : (
+        <p className="text-muted">No plan details available.</p>
+      )}
 
       <p className="text-muted" style={{ marginTop: -8 }}>
         Plan ID: <code>{planId || "N/A"}</code>
       </p>
-
-      {/* <p style={{ marginTop: -8 }}>
-        Price: <code>{plan ? `$${plan.price}` : "—"}</code>
-      </p> */}
 
       <button type="submit" className="btn btn-success w-100" disabled={loading || !planId || planLoading}>
         {loading ? "Processing..." : "Complete Purchase"}

@@ -1,3 +1,4 @@
+// pages/Login.js (or wherever your login component lives)
 "use client"
 
 import { useState } from "react"
@@ -41,15 +42,37 @@ const Login = () => {
         password: formData.password,
       })
 
-      if (success && data.status === "success") {
-        // Store token in localStorage
-        localStorage.setItem("token", data.token)
-        localStorage.setItem("user", JSON.stringify(data.user))
+      // NOTE: auth.loginUser now normalizes token to data.token
+      if (success && data && (data.status === 1 || data.status === "1")) {
+        console.log("[v0] Login successful, received token:", data.token)
+        console.log("[v0] Received user data:", { id: data.user_id || data.userId, name: data.name })
+
+        // Save normalized token (data.token) — guaranteed by auth.loginUser normalization
+        if (data.token) {
+          localStorage.setItem("token", data.token)
+        } else {
+          console.warn("[v0] No token present in response, login may not work for protected endpoints.")
+        }
+
+        // Save user object
+        const userObject = {
+          id: data.user_id || data.userId || null,
+          name: data.name || null,
+          email: formData.email,
+        }
+        localStorage.setItem("user", JSON.stringify(userObject))
+
+        // Verify stored token
+        const storedToken = localStorage.getItem("token")
+        console.log(
+          "[v0] Stored token verification:",
+          storedToken ? "Token stored successfully" : "FAILED to store token",
+        )
 
         Swal.fire({
           icon: "success",
           title: "Login Successful!",
-          text: `Welcome back, ${data.user.name}!`,
+          text: `Welcome back, ${data.name || "User"}!`,
           confirmButtonColor: "#3AC6BD",
           timer: 2000,
           timerProgressBar: true,
@@ -57,9 +80,12 @@ const Login = () => {
           navigate("/dashboard")
         })
       } else {
-        throw new Error(data.message || "Login failed")
+        // If API returned an error message field, surface it; otherwise generic.
+        const errMsg = data?.message || "Login failed"
+        throw new Error(errMsg)
       }
     } catch (error) {
+      console.error("[v0] Login error:", error)
       Swal.fire({
         icon: "error",
         title: "Login Failed",
