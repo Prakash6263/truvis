@@ -1,9 +1,8 @@
 const API_BASE_URL = "https://python.aitechnotech.in/truvis";
 
 const getAuthHeaders = () => {
-  // const token = localStorage.getItem("token"); // 🔑 login ke baad save hua token
-  const token =
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiMjIiLCJlbWFpbCI6ImFydmluZEBnbWFpbC5jb20iLCJleHAiOjE3NjkwNjAzNjAsImlhdCI6MTc2ODk3Mzk2MH0.H_uQg9mIosfxDK22qGQFU9YOqXp_WiuhmPeNcsiguz4";
+  // Get token from localStorage (saved during login)
+  const token = typeof localStorage !== "undefined" ? localStorage.getItem("token") : null;
   return {
     "Content-Type": "application/json",
     Authorization: token ? `Bearer ${token}` : "",
@@ -104,7 +103,10 @@ export const removeSavedCard = async (payment_method_id) => {
     });
 
     if (!res.ok) {
-      throw new Error(`Remove card failed (${res.status})`);
+      const errorData = await res.json().catch(() => ({}));
+      throw new Error(
+        errorData.message || `Remove card failed (${res.status})`
+      );
     }
 
     return await res.json();

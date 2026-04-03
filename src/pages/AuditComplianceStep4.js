@@ -2,12 +2,17 @@
 import { useEffect, useState } from "react"
 import Sidebar from "../components/Sidebar"
 import TopBar from "../components/TopBar"
+import ChatInput from "../components/ChatInput"
 import { Link, useNavigate } from "react-router-dom"
+import { sendAuditChat } from "../api/audit"
+import Swal from "sweetalert2"
 
 const AuditComplianceStep4 = () => {
   const navigate = useNavigate()
   const [auditResults, setAuditResults] = useState(null)
   const [error, setError] = useState("")
+  const [chatMessages, setChatMessages] = useState([])
+  const [chatLoading, setChatLoading] = useState(false)
 
   useEffect(() => {
     // Load audit results from localStorage
@@ -23,6 +28,45 @@ const AuditComplianceStep4 = () => {
       setError("Audit results not found. Please complete the audit analysis.")
     }
   }, [])
+
+  const handleSendMessage = async (message) => {
+    if (!message.trim() || !auditResults?.audit_id) {
+      return
+    }
+
+    try {
+      setChatLoading(true)
+      
+      // Add user message to chat
+      const userMsg = { role: "user", content: message }
+      setChatMessages((prev) => [...prev, userMsg])
+
+      // Send message to API
+      const response = await sendAuditChat(auditResults.audit_id, message)
+
+      // Add assistant response to chat
+      const assistantMsg = {
+        role: "assistant",
+        content: response.assistant_reply,
+      }
+      setChatMessages((prev) => [...prev, assistantMsg])
+
+      // Update remaining coins if needed
+      if (response.remaining_coins !== undefined) {
+        console.log("[v0] Remaining coins:", response.remaining_coins)
+      }
+    } catch (err) {
+      console.error("[v0] Chat error:", err)
+      Swal.fire({
+        icon: "error",
+        title: "Chat Error",
+        text: err.response?.data?.message || "Failed to send message. Please try again.",
+        confirmButtonColor: "#dc3545",
+      })
+    } finally {
+      setChatLoading(false)
+    }
+  }
 
   const handleNewAudit = () => {
     // Clear all stored data
@@ -343,11 +387,63 @@ ${auditResults.reasoning_steps?.map((step, idx) => `${idx + 1}. ${step}`).join("
                       <li>Implement controls to address high-risk areas</li>
                     </ul>
                   </div>
+
+                  {/* Chat Section */}
+                  <div className="summary-card mt-4">
+                    <h6 className="text-dark mb-3">Ask AI About Your Audit</h6>
+                    <div
+                      style={{
+                        backgroundColor: "#f0f0f0",
+                        borderRadius: "8px",
+                        padding: "15px",
+                        maxHeight: "400px",
+                        overflowY: "auto",
+                        marginBottom: "15px",
+                        minHeight: "200px",
+                      }}
+                    >
+                      {chatMessages.length === 0 ? (
+                        <p className="text-muted text-center" style={{ paddingTop: "80px" }}>
+                          No messages yet. Ask a question about your audit findings.
+                        </p>
+                      ) : (
+                        chatMessages.map((msg, idx) => (
+                          <div
+                            key={idx}
+                            style={{
+                              marginBottom: "12px",
+                              padding: "10px",
+                              borderRadius: "6px",
+                              backgroundColor: msg.role === "user" ? "#3AC6BD" : "#e0e0e0",
+                              color: msg.role === "user" ? "white" : "#333",
+                              marginLeft: msg.role === "user" ? "20px" : "0",
+                              marginRight: msg.role === "assistant" ? "20px" : "0",
+                              wordWrap: "break-word",
+                            }}
+                          >
+                            <strong>{msg.role === "user" ? "You: " : "AI: "}</strong>
+                            {msg.content}
+                          </div>
+                        ))
+                      )}
+                      {chatLoading && (
+                        <div style={{ textAlign: "center", padding: "10px" }}>
+                          <span className="spinner-border spinner-border-sm" style={{ color: "#3AC6BD" }}></span>
+                        </div>
+                      )}
+                    </div>
+                    <ChatInput onSendMessage={handleSendMessage} disabled={chatLoading} />
+                  </div>
                 </>
               )}
             </div>
           </div>
         </div>
+
+        {/* Chat Input at bottom */}
+        {auditResults && (
+          <ChatInput onSendMessage={handleSendMessage} disabled={chatLoading || !auditResults} />
+        )}
       </main>
     </>
   )

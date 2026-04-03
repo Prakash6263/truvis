@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import Swal from "sweetalert2";
 import { getSavedCards, removeSavedCard } from "../../api/wallet";
 
 const SavedCards = ({ onSelect }) => {
@@ -60,8 +61,38 @@ const SavedCards = ({ onSelect }) => {
             className="btn btn-sm btn-outline-danger"
             onClick={async (e) => {
               e.preventDefault();
-              await removeSavedCard(card.id);
-              fetchCards(); // ✅ refresh after removal
+              try {
+                // Show confirmation dialog
+                const result = await Swal.fire({
+                  title: "Remove Card?",
+                  text: "Are you sure you want to remove this card?",
+                  icon: "warning",
+                  showCancelButton: true,
+                  confirmButtonText: "Yes, Remove",
+                  cancelButtonText: "Cancel",
+                  confirmButtonColor: "#dc3545",
+                });
+
+                if (!result.isConfirmed) return;
+
+                await removeSavedCard(card.id);
+                
+                Swal.fire({
+                  icon: "success",
+                  title: "Card Removed",
+                  text: "Your card has been removed successfully.",
+                  confirmButtonColor: "#28a745",
+                });
+
+                fetchCards(); // ✅ refresh after removal
+              } catch (err) {
+                Swal.fire({
+                  icon: "error",
+                  title: "Error",
+                  text: err.message || "Failed to remove card. Please try again.",
+                  confirmButtonColor: "#dc3545",
+                });
+              }
             }}
           >
             Remove

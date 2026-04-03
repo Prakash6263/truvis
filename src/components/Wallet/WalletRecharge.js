@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import AmountInput from "./AmountInput";
 import SavedCards from "./SavedCards";
 import NewCardPayment from "./NewCardPayment";
 import { chargeSavedCard, getPlanPrice } from "../../api/wallet";
-import { useSearchParams } from "react-router-dom";
 
 const WalletRecharge = () => {
+  const navigate = useNavigate();
   const [amount, setAmount] = useState("");
   const [selectedCard, setSelectedCard] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -69,9 +70,18 @@ const WalletRecharge = () => {
     <div className="min-vh-100 d-flex justify-content-center align-items-center bg-light">
       <div className="card shadow-lg w-100" style={{ maxWidth: "420px" }}>
         <div className="card-body p-4">
-          <h4 className="card-title text-center fw-bold mb-4">
-            💳 Wallet Recharge
-          </h4>
+          <div className="d-flex align-items-center mb-3">
+            <button
+              onClick={() => navigate(-1)}
+              className="btn btn-sm btn-outline-secondary me-3"
+              style={{ width: "40px", height: "40px", padding: 0 }}
+            >
+              ←
+            </button>
+            <h4 className="card-title fw-bold mb-0">
+              💳 Wallet Recharge
+            </h4>
+          </div>
 
           {/* Alerts */}
           {error && <div className="alert alert-danger py-2">{error}</div>}

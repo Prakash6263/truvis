@@ -121,3 +121,30 @@ export const finalizeAudit = async (auditId) => {
     throw error
   }
 }
+
+// STEP 4: Chat with AI about audit findings
+// POST https://python.aitechnotech.in/truvis/audit/chat/{audit_id}
+// Body: { "user_message": "message" }
+export const sendAuditChat = async (auditId, userMessage) => {
+  try {
+    console.log("[v0] Sending chat message for audit ID:", auditId)
+
+    const response = await axios.post(
+      `${AUDIT_API_URL}/chat/${auditId}`,
+      { user_message: userMessage },
+      {
+        headers: {
+          accept: "application/json",
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${getAuthToken()}`,
+        },
+      }
+    )
+
+    console.log("[v0] CHAT SUCCESS - Response:", response.data)
+    return response.data
+  } catch (error) {
+    console.error("[v0] CHAT FAILED - Error:", error.response?.data || error.message)
+    throw error
+  }
+}

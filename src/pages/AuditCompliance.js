@@ -4,7 +4,6 @@ import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import Sidebar from "../components/Sidebar"
 import TopBar from "../components/TopBar"
-import ChatInput from "../components/ChatInput"
 
 const AuditCompliance = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
@@ -19,11 +18,6 @@ const AuditCompliance = () => {
     setIsDarkMode(!isDarkMode)
     document.body.classList.toggle("dark-mode")
     document.getElementById("sidebar").classList.toggle("dark-mode")
-  }
-
-  const handleSendMessage = (message) => {
-    console.log("Sending message:", message)
-    // Handle message sending logic here
   }
 
   const handleStartAudit = () => {
@@ -101,8 +95,6 @@ const AuditCompliance = () => {
             </div>
           </div>
         </div>
-
-        <ChatInput onSendMessage={handleSendMessage} />
       </main>
     </div>
   )
