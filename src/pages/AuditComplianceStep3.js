@@ -1,21 +1,120 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Sidebar from "../components/Sidebar"
 import TopBar from "../components/TopBar"
 import { Link, useNavigate } from "react-router-dom"
+import { runAuditReasoning, getAuditStatus, finalizeAudit } from "../api/audit"
 
 const AuditComplianceStep3 = () => {
   const [searchTerm, setSearchTerm] = useState("")
+  const [loading, setLoading] = useState(false)
+  const [processing, setProcessing] = useState(false)
+  const [error, setError] = useState("")
+  const [auditData, setAuditData] = useState(null)
+  const [findings, setFindings] = useState([])
+  const [reasoningSteps, setReasoningSteps] = useState([])
   const navigate = useNavigate()
 
-  const handleSubmit = (e) => {
+  useEffect(() => {
+    const auditId = localStorage.getItem("auditId")
+    if (!auditId) {
+      setError("Audit ID not found. Please start from step 1.")
+      return
+    }
+
+    // Start the reasoning process
+    initializeAuditReasoning(auditId)
+  }, [])
+
+  const initializeAuditReasoning = async (auditId) => {
+    setLoading(true)
+    try {
+      console.log("[v0] Starting audit reasoning for:", auditId)
+      const response = await runAuditReasoning(auditId)
+      console.log("[v0] Reasoning started:", response)
+      
+      // Start polling for status
+      pollAuditStatus(auditId)
+    } catch (err) {
+      console.error("[v0] Error starting audit reasoning:", err)
+      setError(err.response?.data?.detail || "Failed to start audit reasoning. Please try again.")
+      setLoading(false)
+    }
+  }
+
+  const pollAuditStatus = (auditId) => {
+    const pollInterval = setInterval(async () => {
+      try {
+        const response = await getAuditStatus(auditId)
+        console.log("[v0] Audit status:", response)
+
+        if (response.status === "completed") {
+          clearInterval(pollInterval)
+          setAuditData(response)
+          
+          // Extract findings
+          if (response.findings) {
+            setFindings(response.findings)
+          }
+          
+          // Extract reasoning steps
+          if (response.reasoning_steps) {
+            setReasoningSteps(response.reasoning_steps)
+          }
+
+          // Store data for Step 4
+          localStorage.setItem("auditResults", JSON.stringify(response))
+          setProcessing(false)
+          setLoading(false)
+        } else if (response.status === "processing") {
+          setProcessing(true)
+          setLoading(true)
+        } else if (response.status === "failed") {
+          clearInterval(pollInterval)
+          setError("Audit analysis failed. Please try again.")
+          setLoading(false)
+          setProcessing(false)
+        }
+      } catch (err) {
+        console.error("[v0] Error polling audit status:", err)
+        // Continue polling even on error
+      }
+    }, 2000) // Poll every 2 seconds
+  }
+
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    navigate("/audit-compliance-step4")
+    
+    const auditId = localStorage.getItem("auditId")
+    if (!auditId) {
+      setError("Audit ID not found. Please start from step 1.")
+      return
+    }
+
+    try {
+      setLoading(true)
+      console.log("[v0] Finalizing audit:", auditId)
+      await finalizeAudit(auditId)
+      console.log("[v0] Audit finalized")
+      navigate("/audit-compliance-step4")
+    } catch (err) {
+      console.error("[v0] Error finalizing audit:", err)
+      setError(err.response?.data?.detail || "Failed to finalize audit. You can still proceed to view results.")
+      setLoading(false)
+    }
   }
 
   const handleBack = () => {
     navigate("/audit-compliance-step2")
+  }
+
+  const getSeverityBadge = (level) => {
+    const levelLower = level?.toLowerCase()
+    if (levelLower === "critical") return "badge-danger"
+    if (levelLower === "high") return "badge-high"
+    if (levelLower === "medium") return "badge-mid"
+    return "badge-low"
   }
 
   return (
@@ -142,153 +241,125 @@ const AuditComplianceStep3 = () => {
               {/* Header */}
               <div className="d-flex justify-content-between align-items-center mb-5">
                 <div>
-                  <h6 className="mb-0 fw-bold text-dark">Audit Scope</h6>
+                  <h6 className="mb-0 fw-bold text-dark">Audit Analysis</h6>
                   <small className="text-dark">Audit Reasoning Overview</small>
                 </div>
-                <button className="btn btn-success btn-sm">
-                  <i className="fa fa-download me-1"></i> Download
-                </button>
               </div>
 
-              <div className="text-center text-dark mb-5">
-                <p>
-                  The audit analysis has identified several compliance areas that require attention. The findings below
-                  represent potential risks and recommendations for your organization's security posture.
-                </p>
-                <p>
-                  Each finding has been categorized by severity level to help prioritize remediation efforts. Please
-                  review the detailed recommendations for each identified issue.
-                </p>
-              </div>
+              {error && (
+                <div className="alert alert-danger alert-dismissible fade show" role="alert">
+                  {error}
+                  <button type="button" className="btn-close" onClick={() => setError("")}></button>
+                </div>
+              )}
 
-              {/* Detail Finding Table */}
-              <div className="table-responsive bg-white p-2 rounded">
-                <table className="table align-middle mb-0">
-                  <thead>
-                    <tr>
-                      <th>
-                        <input type="checkbox" />
-                      </th>
-                      <th>Finding</th>
-                      <th>Severity</th>
-                      <th>Recommendation</th>
-                      <th>Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td>
-                        <input type="checkbox" />
-                      </td>
-                      <td>RC001</td>
-                      <td>
-                        <span className="badge-high">High</span>
-                      </td>
-                      <td>
-                        None Identified <i className="fa fa-arrow-up"></i>
-                      </td>
-                      <td>
-                        System scan report <i className="fa fa-arrow-up"></i>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td>
-                        <input type="checkbox" />
-                      </td>
-                      <td>RC002</td>
-                      <td>
-                        <span className="badge-low">Low</span>
-                      </td>
-                      <td>
-                        Enforce MFA <i className="fa fa-arrow-up"></i>
-                      </td>
-                      <td>
-                        System scan report <i className="fa fa-arrow-up"></i>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
+              {loading && (
+                <div className="alert alert-info">
+                  <i className="fa fa-spinner fa-spin me-2"></i>
+                  {processing ? "Analyzing audit findings..." : "Loading audit results..."}
+                </div>
+              )}
 
-              <div className="bg-light p-2 rounded mt-3">
-                <div className="shadow rounded p-2 bg-white">
-                  {/* Search */}
-                  <div className="mt-4">
-                    <input
-                      type="text"
-                      placeholder="Search reasoning steps or findings..."
-                      className="search-box"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                    />
+              {!loading && auditData && (
+                <>
+                  <div className="text-center text-dark mb-5">
+                    <p>
+                      The audit analysis has identified several compliance areas that require attention. The findings below
+                      represent potential risks and recommendations for your organization's security posture.
+                    </p>
+                    <p>
+                      Each finding has been categorized by severity level to help prioritize remediation efforts. Please
+                      review the detailed recommendations for each identified issue.
+                    </p>
                   </div>
 
-                  {/* Accordion */}
-                  <div className="accordion mt-3" id="accordionExample">
-                    <div className="accordion-item">
-                      <h2 className="accordion-header">
-                        <button
-                          className="accordion-button"
-                          type="button"
-                          data-bs-toggle="collapse"
-                          data-bs-target="#step1"
-                        >
-                          Step 1: Compliance with ISO 27001
-                        </button>
-                      </h2>
-                      <div id="step1" className="accordion-collapse collapse show">
-                        <div className="accordion-body bg-success-subtle">
-                          Confidence: High - All ISO 27001 requirements have been evaluated against current practices.
-                        </div>
-                      </div>
+                  {/* Detail Finding Table */}
+                  {findings.length > 0 && (
+                    <div className="table-responsive bg-white p-2 rounded mb-4">
+                      <table className="table align-middle mb-0 table-sm">
+                        <thead>
+                          <tr>
+                            <th>Risk ID</th>
+                            <th>Risk Statement</th>
+                            <th>Severity</th>
+                            <th>Current Risk Level</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {findings.map((finding, idx) => (
+                            <tr key={idx}>
+                              <td>{finding.riskId}</td>
+                              <td style={{ fontSize: "12px" }}>{finding.riskStatement}</td>
+                              <td>
+                                <span className={getSeverityBadge(finding.currentImpactLevel)}>
+                                  {finding.currentImpactLevel}
+                                </span>
+                              </td>
+                              <td>
+                                <span className={getSeverityBadge(finding.currentRiskLevel)}>
+                                  {finding.currentRiskLevel}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
-                    <div className="accordion-item">
-                      <h2 className="accordion-header">
-                        <button
-                          className="accordion-button collapsed"
-                          type="button"
-                          data-bs-toggle="collapse"
-                          data-bs-target="#step2"
-                        >
-                          Step 2: Identify Risk
-                        </button>
-                      </h2>
-                      <div id="step2" className="accordion-collapse collapse">
-                        <div className="accordion-body">
-                          Risk assessment completed with focus on data protection and access controls.
-                        </div>
-                      </div>
-                    </div>
-                    <div className="accordion-item">
-                      <h2 className="accordion-header">
-                        <button
-                          className="accordion-button collapsed"
-                          type="button"
-                          data-bs-toggle="collapse"
-                          data-bs-target="#step3"
-                        >
-                          Step 3: Recommendation
-                        </button>
-                      </h2>
-                      <div id="step3" className="accordion-collapse collapse">
-                        <div className="accordion-body">
-                          Detailed recommendations provided for each identified compliance gap.
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                  )}
+                </>
+              )}
 
-                  {/* Footer buttons */}
-                  <div className="d-flex mt-3">
-                    <button className="btn btn-outline-secondary me-3" onClick={handleBack}>
-                      Back
-                    </button>
-                    <button className="btn-submit" onClick={handleSubmit}>
-                      Proceed to Next Step
-                    </button>
+              {!loading && auditData && reasoningSteps.length > 0 && (
+                <div className="bg-light p-2 rounded mt-3">
+                  <div className="shadow rounded p-2 bg-white">
+                    {/* Search */}
+                    <div className="mt-4">
+                      <input
+                        type="text"
+                        placeholder="Search reasoning steps or findings..."
+                        className="search-box"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                      />
+                    </div>
+
+                    {/* Accordion */}
+                    <div className="accordion mt-3" id="accordionExample">
+                      {reasoningSteps
+                        .filter((step) => step.toLowerCase().includes(searchTerm.toLowerCase()))
+                        .map((step, idx) => (
+                          <div className="accordion-item" key={idx}>
+                            <h2 className="accordion-header">
+                              <button
+                                className={`accordion-button ${idx === 0 ? "" : "collapsed"}`}
+                                type="button"
+                                data-bs-toggle="collapse"
+                                data-bs-target={`#step${idx}`}
+                              >
+                                {`Step ${idx + 1}`}
+                              </button>
+                            </h2>
+                            <div id={`step${idx}`} className={`accordion-collapse collapse ${idx === 0 ? "show" : ""}`}>
+                              <div className="accordion-body bg-success-subtle">
+                                {step}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+
+                    {/* Footer buttons */}
+                    <div className="d-flex mt-3">
+                      <button className="btn btn-outline-secondary me-3" onClick={handleBack}>
+                        Back
+                      </button>
+                      <button className="btn-submit" onClick={handleSubmit} disabled={loading}>
+                        {loading ? "Processing..." : "Proceed to Next Step"}
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         </div>

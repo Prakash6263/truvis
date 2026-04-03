@@ -4,6 +4,7 @@ import { useState } from "react"
 import Sidebar from "../components/Sidebar"
 import TopBar from "../components/TopBar"
 import { Link, useNavigate } from "react-router-dom"
+import { createAuditScope } from "../api/audit"
 
 const AuditComplianceStep1 = () => {
   const [formData, setFormData] = useState({
@@ -15,6 +16,8 @@ const AuditComplianceStep1 = () => {
     standards: [],
     note: "",
   })
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
   const navigate = useNavigate()
 
   const handleInputChange = (field, value) => {
@@ -22,6 +25,7 @@ const AuditComplianceStep1 = () => {
       ...prev,
       [field]: value,
     }))
+    setError("")
   }
 
   const handleStandardChange = (standard) => {
@@ -33,10 +37,51 @@ const AuditComplianceStep1 = () => {
     }))
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    console.log("Form submitted:", formData)
-    navigate("/audit-compliance-step2")
+    
+    // Validation
+    if (!formData.auditType || !formData.scopeDescription || !formData.department || !formData.startDate || !formData.endDate) {
+      setError("Please fill in all required fields")
+      return
+    }
+    
+    if (formData.standards.length === 0) {
+      setError("Please select at least one standard")
+      return
+    }
+
+    setLoading(true)
+    try {
+      const auditTypeMap = {
+        internal: "Internal Security Audit",
+        external: "External Audit",
+        compliance: "Compliance Audit",
+      }
+
+      const payload = {
+        audit_type: auditTypeMap[formData.auditType] || formData.auditType,
+        scope_description: formData.scopeDescription,
+        department: formData.department === "it" ? "IT Security" : formData.department,
+        start_date: formData.startDate,
+        end_date: formData.endDate,
+        standards: formData.standards.join(","),
+        notes: formData.note,
+      }
+
+      console.log("[v0] Submitting audit scope:", payload)
+      const response = await createAuditScope(payload)
+      console.log("[v0] Audit scope created:", response)
+
+      // Store audit ID for next step
+      localStorage.setItem("auditId", response.audit_id)
+      navigate("/audit-compliance-step2")
+    } catch (err) {
+      console.error("[v0] Error creating audit:", err)
+      setError(err.response?.data?.detail || "Failed to create audit scope. Please try again.")
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleCancel = () => {
@@ -125,6 +170,13 @@ const AuditComplianceStep1 = () => {
               <p className="text-dark mb-5" style={{ fontSize: "13px" }}>
                 Please Provide Details
               </p>
+
+              {error && (
+                <div className="alert alert-danger alert-dismissible fade show" role="alert">
+                  {error}
+                  <button type="button" className="btn-close" onClick={() => setError("")}></button>
+                </div>
+              )}
 
               <div className="row justify-content-center">
                 <div className="col-lg-6">
@@ -262,11 +314,11 @@ const AuditComplianceStep1 = () => {
 
                     {/* Buttons */}
                     <div className="text-center">
-                      <button type="button" className="btn-cancel" onClick={handleCancel}>
+                      <button type="button" className="btn-cancel" onClick={handleCancel} disabled={loading}>
                         Cancel
                       </button>
-                      <button type="submit" className="btn-submit">
-                        Submit
+                      <button type="submit" className="btn-submit" disabled={loading}>
+                        {loading ? "Creating Audit..." : "Submit"}
                       </button>
                     </div>
                   </form>

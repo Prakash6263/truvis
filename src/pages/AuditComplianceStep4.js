@@ -1,17 +1,94 @@
 "use client"
+import { useEffect, useState } from "react"
 import Sidebar from "../components/Sidebar"
 import TopBar from "../components/TopBar"
 import { Link, useNavigate } from "react-router-dom"
 
 const AuditComplianceStep4 = () => {
   const navigate = useNavigate()
+  const [auditResults, setAuditResults] = useState(null)
+  const [error, setError] = useState("")
+
+  useEffect(() => {
+    // Load audit results from localStorage
+    const results = localStorage.getItem("auditResults")
+    if (results) {
+      try {
+        setAuditResults(JSON.parse(results))
+      } catch (err) {
+        console.error("[v0] Error parsing audit results:", err)
+        setError("Failed to load audit results")
+      }
+    } else {
+      setError("Audit results not found. Please complete the audit analysis.")
+    }
+  }, [])
 
   const handleNewAudit = () => {
+    // Clear all stored data
+    localStorage.removeItem("auditId")
+    localStorage.removeItem("extractedPreview")
+    localStorage.removeItem("auditResults")
     navigate("/audit-compliance")
   }
 
   const handleBack = () => {
     navigate("/audit-compliance-step3")
+  }
+
+  const downloadReport = () => {
+    if (!auditResults) return
+
+    const reportContent = `
+AUDIT COMPLIANCE REPORT
+========================
+
+Audit ID: ${auditResults.audit_id}
+Status: ${auditResults.status}
+Overview: ${auditResults.overview}
+
+FINDINGS SUMMARY
+================
+Total Findings: ${auditResults.findings?.length || 0}
+
+${auditResults.findings
+  ?.map(
+    (finding) => `
+Risk ID: ${finding.riskId}
+Risk Statement: ${finding.riskStatement}
+Severity: ${finding.currentImpactLevel}
+Risk Level: ${finding.currentRiskLevel}
+Justification: ${finding.justification}
+Proposed Mitigation: ${finding.proposedMitigatingControl}
+---`
+  )
+  .join("\n")}
+
+REASONING STEPS
+===============
+${auditResults.reasoning_steps?.map((step, idx) => `${idx + 1}. ${step}`).join("\n\n")}
+    `
+
+    const element = document.createElement("a")
+    element.setAttribute("href", "data:text/plain;charset=utf-8," + encodeURIComponent(reportContent))
+    element.setAttribute("download", `audit-report-${auditResults.audit_id}.txt`)
+    element.style.display = "none"
+    document.body.appendChild(element)
+    element.click()
+    document.body.removeChild(element)
+  }
+
+  const getHighPriorityCount = () => {
+    return auditResults?.findings?.filter((f) => f.currentRiskLevel === "Critical" || f.currentRiskLevel === "High")
+      .length || 0
+  }
+
+  const getMediumPriorityCount = () => {
+    return auditResults?.findings?.filter((f) => f.currentRiskLevel === "Medium").length || 0
+  }
+
+  const getLowPriorityCount = () => {
+    return auditResults?.findings?.filter((f) => f.currentRiskLevel === "Low").length || 0
   }
 
   return (
@@ -119,76 +196,155 @@ const AuditComplianceStep4 = () => {
 
             {/* Form Card */}
             <div className="form-card">
-              {/* Completion Card */}
-              <div className="completion-card">
-                <div className="completion-icon">✅</div>
-                <h3>Audit Compliance Assessment Complete!</h3>
-                <p>
-                  Your comprehensive audit has been successfully completed. Review the summary below for key findings
-                  and recommendations.
-                </p>
-              </div>
-
-              {/* Summary Card */}
-              <div className="summary-card">
-                <h5 className="text-dark mb-4">Audit Summary</h5>
-
-                <div className="metric-item">
-                  <span>Total Findings:</span>
-                  <span className="metric-value">12</span>
+              {error && (
+                <div className="alert alert-danger alert-dismissible fade show" role="alert">
+                  {error}
+                  <button type="button" className="btn-close" onClick={() => setError("")}></button>
                 </div>
+              )}
 
-                <div className="metric-item">
-                  <span>High Priority Issues:</span>
-                  <span className="metric-value">3</span>
-                </div>
+              {auditResults && (
+                <>
+                  {/* Completion Card */}
+                  <div className="completion-card">
+                    <div className="completion-icon">✅</div>
+                    <h3>Audit Compliance Assessment Complete!</h3>
+                    <p>
+                      Your comprehensive audit has been successfully completed. Review the summary below for key findings
+                      and recommendations.
+                    </p>
+                  </div>
 
-                <div className="metric-item">
-                  <span>Medium Priority Issues:</span>
-                  <span className="metric-value">5</span>
-                </div>
+                  {/* Overview */}
+                  <div className="summary-card">
+                    <h6 className="text-dark">Audit Overview</h6>
+                    <p className="text-dark">{auditResults.overview}</p>
+                  </div>
 
-                <div className="metric-item">
-                  <span>Low Priority Issues:</span>
-                  <span className="metric-value">4</span>
-                </div>
+                  {/* Summary Card */}
+                  <div className="summary-card">
+                    <h5 className="text-dark mb-4">Audit Summary</h5>
 
-                <div className="metric-item">
-                  <span>Compliance Score:</span>
-                  <span className="metric-value">78%</span>
-                </div>
+                    <div className="metric-item">
+                      <span>Audit ID:</span>
+                      <span className="metric-value" style={{ fontSize: "11px" }}>{auditResults.audit_id}</span>
+                    </div>
 
-                <div className="metric-item">
-                  <span>Standards Evaluated:</span>
-                  <span className="metric-value">ISO 27001, GDPR</span>
-                </div>
-              </div>
+                    <div className="metric-item">
+                      <span>Total Findings:</span>
+                      <span className="metric-value">{auditResults.findings?.length || 0}</span>
+                    </div>
 
-              {/* Action Buttons */}
-              <div className="text-center mt-5">
-                <button className="btn btn-success me-3">
-                  <i className="fa fa-download me-2"></i>
-                  Download Full Report
-                </button>
-                <button className="btn btn-outline-primary me-3">
-                  <i className="fa fa-share me-2"></i>
-                  Share Results
-                </button>
-                <button className="btn-submit" onClick={handleNewAudit}>
-                  Start New Audit
-                </button>
-              </div>
+                    <div className="metric-item">
+                      <span>Critical/High Priority Issues:</span>
+                      <span className="metric-value">{getHighPriorityCount()}</span>
+                    </div>
 
-              {/* Next Steps */}
-              <div className="summary-card mt-4">
-                <h6 className="text-dark">Recommended Next Steps:</h6>
-                <ul className="text-dark">
-                  <li>Address high-priority findings within 30 days</li>
-                  <li>Implement multi-factor authentication across all systems</li>
-                  <li>Update data retention policies to ensure GDPR compliance</li>
-                  <li>Schedule follow-up audit in 6 months</li>
-                </ul>
-              </div>
+                    <div className="metric-item">
+                      <span>Medium Priority Issues:</span>
+                      <span className="metric-value">{getMediumPriorityCount()}</span>
+                    </div>
+
+                    <div className="metric-item">
+                      <span>Low Priority Issues:</span>
+                      <span className="metric-value">{getLowPriorityCount()}</span>
+                    </div>
+                  </div>
+
+                  {/* Detailed Findings */}
+                  {auditResults.findings && auditResults.findings.length > 0 && (
+                    <div className="summary-card">
+                      <h6 className="text-dark mb-3">Detailed Findings</h6>
+                      <div className="table-responsive">
+                        <table className="table table-sm table-hover">
+                          <thead>
+                            <tr>
+                              <th>Risk ID</th>
+                              <th>Risk Statement</th>
+                              <th>Severity</th>
+                              <th>Risk Level</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {auditResults.findings.map((finding, idx) => (
+                              <tr key={idx}>
+                                <td>{finding.riskId}</td>
+                                <td style={{ fontSize: "12px" }}>{finding.riskStatement}</td>
+                                <td>
+                                  <span
+                                    style={{
+                                      backgroundColor:
+                                        finding.currentImpactLevel === "High"
+                                          ? "#ff4d4d"
+                                          : finding.currentImpactLevel === "Critical"
+                                            ? "#d32f2f"
+                                            : "#ffc107",
+                                      color: finding.currentImpactLevel === "High" || finding.currentImpactLevel === "Critical" ? "white" : "#333",
+                                      padding: "4px 8px",
+                                      borderRadius: "4px",
+                                      fontSize: "11px",
+                                    }}
+                                  >
+                                    {finding.currentImpactLevel}
+                                  </span>
+                                </td>
+                                <td>
+                                  <span
+                                    style={{
+                                      backgroundColor:
+                                        finding.currentRiskLevel === "Critical"
+                                          ? "#d32f2f"
+                                          : finding.currentRiskLevel === "High"
+                                            ? "#ff4d4d"
+                                            : finding.currentRiskLevel === "Medium"
+                                              ? "#ffc107"
+                                              : "#28a745",
+                                      color:
+                                        finding.currentRiskLevel === "Critical" ||
+                                        finding.currentRiskLevel === "High" ||
+                                        finding.currentRiskLevel === "Medium"
+                                          ? "#fff"
+                                          : "#fff",
+                                      padding: "4px 8px",
+                                      borderRadius: "4px",
+                                      fontSize: "11px",
+                                    }}
+                                  >
+                                    {finding.currentRiskLevel}
+                                  </span>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Action Buttons */}
+                  <div className="text-center mt-5">
+                    <button className="btn btn-success me-3" onClick={downloadReport}>
+                      <i className="fa fa-download me-2"></i>
+                      Download Full Report
+                    </button>
+                    <button className="btn-submit" onClick={handleNewAudit}>
+                      Start New Audit
+                    </button>
+                  </div>
+
+                  {/* Next Steps */}
+                  <div className="summary-card mt-4">
+                    <h6 className="text-dark">Recommended Next Steps:</h6>
+                    <ul className="text-dark">
+                      <li>Review all Critical and High priority findings immediately</li>
+                      <li>Develop remediation plans for identified risks</li>
+                      <li>Assign ownership and timelines for each finding</li>
+                      <li>Schedule follow-up audit in 3-6 months</li>
+                      <li>Implement controls to address high-risk areas</li>
+                    </ul>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>
