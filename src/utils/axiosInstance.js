@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const axiosInstance = axios.create({
-  baseURL: "https://aitechnotech.in/Truvis",
+  baseURL: "https://python.aitechnotech.in/truvis",
   
 });
 

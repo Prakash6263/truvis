@@ -1,7 +1,7 @@
 // api/auth.js
 // API functions for authentication endpoints
 
-const API_BASE_URL = "https://aitechnotech.in/Truvis"
+const API_BASE_URL = "https://python.aitechnotech.in/truvis"
 // const API_BASE_URL = "http://localhost:5000"
 
 // Register user

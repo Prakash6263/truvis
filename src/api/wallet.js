@@ -1,4 +1,4 @@
-const API_BASE_URL = "https://aitechnotech.in/Truvis";
+const API_BASE_URL = "https://python.aitechnotech.in/truvis";
 
 const getAuthHeaders = () => {
   // const token = localStorage.getItem("token"); // 🔑 login ke baad save hua token

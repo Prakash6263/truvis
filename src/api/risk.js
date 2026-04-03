@@ -1,4 +1,4 @@
-const API_URL = process.env.REACT_APP_API_URL || "https://aitechnotech.in/Truvis"
+const API_URL = process.env.REACT_APP_API_URL || "https://python.aitechnotech.in/truvis"
 // const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000"
 
 const getAuthHeaders = () => {
