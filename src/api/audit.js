@@ -190,3 +190,25 @@ export const getAuditDetail = async (auditId) => {
     throw error
   }
 }
+
+// Download audit report PDF
+// GET https://python.aitechnotech.in/truvis/audit/download/{audit_id}
+export const downloadAuditReport = async (auditId) => {
+  try {
+    const response = await axios.get(
+      `${AUDIT_API_URL}/download/${auditId}`,
+      {
+        headers: {
+          accept: "application/json",
+          Authorization: `Bearer ${getAuthToken()}`,
+        },
+        responseType: "blob", // Important for file download
+      }
+    )
+
+    return response.data
+  } catch (error) {
+    console.error("[DOWNLOAD REPORT FAILED]", error)
+    throw error
+  }
+}

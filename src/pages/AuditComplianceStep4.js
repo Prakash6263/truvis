@@ -4,7 +4,7 @@ import AuditHistorySidebar from "../components/AuditHistorySidebar"
 import TopBar from "../components/TopBar"
 import ChatInput from "../components/ChatInput"
 import { Link, useNavigate } from "react-router-dom"
-import { sendAuditChat } from "../api/audit"
+import { sendAuditChat,downloadAuditReport  } from "../api/audit"
 import Swal from "sweetalert2"
 
 const AuditComplianceStep4 = () => {
@@ -80,47 +80,31 @@ const AuditComplianceStep4 = () => {
     navigate("/audit-compliance-step3")
   }
 
-  const downloadReport = () => {
-    if (!auditResults) return
+const downloadReport = async () => {
+  if (!auditResults?.audit_id) return
 
-    const reportContent = `
-AUDIT COMPLIANCE REPORT
-========================
+  try {
+    const blob = await downloadAuditReport(auditResults.audit_id)
 
-Audit ID: ${auditResults.audit_id}
-Status: ${auditResults.status}
-Overview: ${auditResults.overview}
-
-FINDINGS SUMMARY
-================
-Total Findings: ${auditResults.findings?.length || 0}
-
-${auditResults.findings
-  ?.map(
-    (finding) => `
-Risk ID: ${finding.riskId}
-Risk Statement: ${finding.riskStatement}
-Severity: ${finding.currentImpactLevel}
-Risk Level: ${finding.currentRiskLevel}
-Justification: ${finding.justification}
-Proposed Mitigation: ${finding.proposedMitigatingControl}
----`
-  )
-  .join("\n")}
-
-REASONING STEPS
-===============
-${auditResults.reasoning_steps?.map((step, idx) => `${idx + 1}. ${step}`).join("\n\n")}
-    `
-
-    const element = document.createElement("a")
-    element.setAttribute("href", "data:text/plain;charset=utf-8," + encodeURIComponent(reportContent))
-    element.setAttribute("download", `audit-report-${auditResults.audit_id}.txt`)
-    element.style.display = "none"
-    document.body.appendChild(element)
-    element.click()
-    document.body.removeChild(element)
+    const url = window.URL.createObjectURL(new Blob([blob]))
+    const link = document.createElement("a")
+    link.href = url
+    link.setAttribute(
+      "download",
+      `Audit_Report_${auditResults.audit_id}.pdf`
+    )
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+  } catch (error) {
+    console.error("Download failed:", error)
+    Swal.fire({
+      icon: "error",
+      title: "Download Failed",
+      text: "Unable to download report",
+    })
   }
+}
 
   const getHighPriorityCount = () => {
     return auditResults?.findings?.filter((f) => f.currentRiskLevel === "Critical" || f.currentRiskLevel === "High")
