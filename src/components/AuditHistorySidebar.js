@@ -65,7 +65,7 @@ const AuditHistorySidebar = ({
   return (
     <div className={`sidebar ${isCollapsed ? "collapsed" : ""}`} id="sidebar">
       <div className="logo">
-        <img src="assets/img/logo/logo.png" alt="logo" />
+        <img src="/assets/img/logo/logo.png" alt="logo" />
       </div>
       <div className="d-flex justify-content-between">
         <button 
@@ -75,7 +75,7 @@ const AuditHistorySidebar = ({
           + New Audit
         </button>
         <a>
-          <img src="assets/img/search.png" alt="search" />
+          <img src="/assets/img/search.png" alt="search" />
         </a>
       </div>
 
@@ -103,7 +103,7 @@ const AuditHistorySidebar = ({
                   onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "transparent"}
                 >
                   <img 
-                    src="assets/img/chaticon.png" 
+                    src="/assets/img/chaticon.png" 
                     style={{ width: "16px", marginRight: "8px", display: "inline-block" }} 
                     alt="audit" 
                   />
