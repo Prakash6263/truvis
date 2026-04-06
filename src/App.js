@@ -6,6 +6,7 @@ import AuditComplianceStep1 from "./pages/AuditComplianceStep1";
 import AuditComplianceStep2 from "./pages/AuditComplianceStep2";
 import AuditComplianceStep3 from "./pages/AuditComplianceStep3";
 import AuditComplianceStep4 from "./pages/AuditComplianceStep4";
+import AuditDetail from "./pages/AuditDetail";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -108,6 +109,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <AuditComplianceStep4 />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/audit-detail/:auditId"
+            element={
+              <ProtectedRoute>
+                <AuditDetail />
               </ProtectedRoute>
             }
           />

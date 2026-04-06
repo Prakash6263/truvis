@@ -6400,7 +6400,7 @@ body.dark-mode {
 
     .chat-input {
       position: fixed;
-      bottom: 20px;
+      bottom: 5px;
       left: 350px;
       right: 10%;
       display: flex;

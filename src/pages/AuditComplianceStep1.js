@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import Sidebar from "../components/Sidebar"
+import AuditHistorySidebar from "../components/AuditHistorySidebar"
 import TopBar from "../components/TopBar"
 import { Link, useNavigate } from "react-router-dom"
 import { createAuditScope } from "../api/audit"
@@ -138,7 +138,7 @@ const AuditComplianceStep1 = () => {
       `}</style>
 
       <main className="main">
-        <Sidebar />
+        <AuditHistorySidebar />
 
         <div className="main2">
           <TopBar />

@@ -67,7 +67,7 @@ const TopBar = ({ onSidebarToggle, onModeToggle }) => {
           {loading ? "Loading..." : `${coinBalance} Coin`}
         </button>
         <i className="fas fa-bell icon"></i>
-        <img src="assets/img/Avatar.png" className="rounded-circle" alt="User" onClick={handleClick} />
+        <img src="/assets/img/Avatar.png" className="rounded-circle" alt="User" onClick={handleClick} />
       </div>
     </div>
   )

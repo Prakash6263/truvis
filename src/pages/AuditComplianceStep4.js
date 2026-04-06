@@ -1,6 +1,6 @@
 "use client"
 import { useEffect, useState } from "react"
-import Sidebar from "../components/Sidebar"
+import AuditHistorySidebar from "../components/AuditHistorySidebar"
 import TopBar from "../components/TopBar"
 import ChatInput from "../components/ChatInput"
 import { Link, useNavigate } from "react-router-dom"
@@ -212,7 +212,7 @@ ${auditResults.reasoning_steps?.map((step, idx) => `${idx + 1}. ${step}`).join("
       `}</style>
 
       <main className="main">
-        <Sidebar />
+        <AuditHistorySidebar />
 
         <div className="main2">
           <TopBar />

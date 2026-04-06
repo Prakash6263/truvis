@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
-import Sidebar from "../components/Sidebar"
+import AuditHistorySidebar from "../components/AuditHistorySidebar"
 import TopBar from "../components/TopBar"
 
 const AuditCompliance = () => {
@@ -50,7 +50,7 @@ const AuditCompliance = () => {
       </style>
 
       <main className="main">
-        <Sidebar isCollapsed={isSidebarCollapsed} onToggle={handleSidebarToggle} />
+        <AuditHistorySidebar isCollapsed={isSidebarCollapsed} onToggle={handleSidebarToggle} />
 
         <div className="main2">
           <TopBar onSidebarToggle={handleSidebarToggle} onModeToggle={handleModeToggle} />

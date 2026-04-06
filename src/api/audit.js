@@ -148,3 +148,45 @@ export const sendAuditChat = async (auditId, userMessage) => {
     throw error
   }
 }
+
+// Get audit history (my audits)
+// GET https://python.aitechnotech.in/truvis/audit/my-audits
+export const getAuditHistory = async () => {
+  try {
+    console.log("[v0] Fetching audit history")
+
+    const response = await axios.get(`${AUDIT_API_URL}/my-audits`, {
+      headers: {
+        accept: "application/json",
+        Authorization: `Bearer ${getAuthToken()}`,
+      },
+    })
+
+    console.log("[v0] AUDIT HISTORY - Response:", response.data)
+    return response.data
+  } catch (error) {
+    console.error("[v0] AUDIT HISTORY FAILED - Error:", error.response?.data || error.message)
+    throw error
+  }
+}
+
+// Get audit detail by ID
+// GET https://python.aitechnotech.in/truvis/audit/detail/{audit_id}
+export const getAuditDetail = async (auditId) => {
+  try {
+    console.log("[v0] Fetching audit detail for ID:", auditId)
+
+    const response = await axios.get(`${AUDIT_API_URL}/detail/${auditId}`, {
+      headers: {
+        accept: "application/json",
+        Authorization: `Bearer ${getAuthToken()}`,
+      },
+    })
+
+    console.log("[v0] AUDIT DETAIL - Response:", response.data)
+    return response.data
+  } catch (error) {
+    console.error("[v0] AUDIT DETAIL FAILED - Error:", error.response?.data || error.message)
+    throw error
+  }
+}
