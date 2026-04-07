@@ -91,7 +91,7 @@ const Chat = () => {
                 </a>
               </div>
               <div className="col-md-4">
-                <a href="/audit-compliance">
+                <a href="/audit-compliance-step1">
                   <div className="card-box">
                     <img src="assets/img/chaticon.png" style={{ width: "24px", marginRight: "10px" }} alt="" />
                     Audit and Compliance check
