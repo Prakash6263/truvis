@@ -1,20 +1,20 @@
 "use client"
 
 import { useState } from "react"
-import AuditHistorySidebar from "../components/AuditHistorySidebar"
+import GovernanceSidebar from "../components/GovernanceSidebar"
 import TopBar from "../components/TopBar"
 import { Link, useNavigate } from "react-router-dom"
-import { createAuditScope } from "../api/audit"
+import { createGovernanceScope } from "../api/governance"
 
 const AIGovernanceComplianceStep1 = () => {
   const [formData, setFormData] = useState({
-    auditType: "",
-    scopeDescription: "",
+    complianceScope: "Full AI System",
+    customScopeDescription: "",
     department: "",
     startDate: "",
     endDate: "",
     standards: [],
-    note: "",
+    additionalDetails: "",
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
@@ -41,7 +41,7 @@ const AIGovernanceComplianceStep1 = () => {
     e.preventDefault()
     
     // Validation
-    if (!formData.auditType || !formData.scopeDescription || !formData.department || !formData.startDate || !formData.endDate) {
+    if (!formData.customScopeDescription || !formData.department || !formData.startDate || !formData.endDate) {
       setError("Please fill in all required fields")
       return
     }
@@ -53,31 +53,35 @@ const AIGovernanceComplianceStep1 = () => {
 
     setLoading(true)
     try {
-      const auditTypeMap = {
-        internal: "Internal AI Governance Audit",
-        external: "External AI Governance Audit",
-        compliance: "AI Governance Compliance Audit",
+      // Format start and end dates to MM/DD/YYYY format as per API requirements
+      const formatDate = (dateStr) => {
+        const date = new Date(dateStr)
+        const month = String(date.getMonth() + 1).padStart(2, "0")
+        const day = String(date.getDate()).padStart(2, "0")
+        const year = date.getFullYear()
+        return `${month}/${day}/${year}`
       }
 
       const payload = {
-        audit_type: auditTypeMap[formData.auditType] || formData.auditType,
-        scope_description: formData.scopeDescription,
-        department: formData.department === "it" ? "IT Department" : formData.department,
-        start_date: formData.startDate,
-        end_date: formData.endDate,
+        compliance_scope: formData.complianceScope,
+        custom_scope_description: formData.customScopeDescription,
+        department: formData.department,
+        start_date: formatDate(formData.startDate),
+        end_date: formatDate(formData.endDate),
         standards: formData.standards.join(","),
-        notes: formData.note,
+        additional_scope_details: formData.additionalDetails,
       }
 
       console.log("[v0] Submitting AI governance scope:", payload)
-      const response = await createAuditScope(payload)
+      const response = await createGovernanceScope(payload)
       console.log("[v0] AI governance scope created:", response)
 
-      // Store audit ID for next step
-      localStorage.setItem("aiGovernanceAuditId", response.audit_id)
+      // Store check_id for next step
+      localStorage.setItem("governanceCheckId", response.check_id)
+      localStorage.setItem("governanceScope", JSON.stringify(response))
       navigate("/ai-governance-compliance-step2")
     } catch (err) {
-      console.error("[v0] Error creating AI governance audit:", err)
+      console.error("[v0] Error creating AI governance scope:", err)
       setError(err.response?.data?.detail || "Failed to create AI governance scope. Please try again.")
     } finally {
       setLoading(false)
@@ -138,7 +142,7 @@ const AIGovernanceComplianceStep1 = () => {
       `}</style>
 
       <main className="main">
-        <AuditHistorySidebar />
+        <GovernanceSidebar />
 
         <div className="main2">
           <TopBar />
@@ -181,30 +185,31 @@ const AIGovernanceComplianceStep1 = () => {
               <div className="row justify-content-center">
                 <div className="col-lg-6">
                   <form onSubmit={handleSubmit}>
-                    {/* Audit Type */}
+                    {/* Compliance Scope */}
                     <div className="mb-3">
-                      <label className="form-label">Audit Type</label>
+                      <label className="form-label">Compliance Scope</label>
                       <select
                         className="form-select"
-                        value={formData.auditType}
-                        onChange={(e) => handleInputChange("auditType", e.target.value)}
+                        value={formData.complianceScope}
+                        onChange={(e) => handleInputChange("complianceScope", e.target.value)}
                       >
-                        <option value="">Select Audit Type</option>
-                        <option value="internal">Internal AI Governance Audit</option>
-                        <option value="external">External AI Governance Audit</option>
-                        <option value="compliance">AI Governance Compliance Audit</option>
+                        <option value="Full AI System">Full AI System</option>
+                        <option value="Specific AI Components">Specific AI Components</option>
+                        <option value="Data Processing">Data Processing</option>
+                        <option value="Model Training">Model Training</option>
+                        <option value="Deployment">Deployment</option>
                       </select>
                     </div>
 
-                    {/* Scope Description */}
+                    {/* Custom Scope Description */}
                     <div className="mb-3">
-                      <label className="form-label">Scope Description</label>
+                      <label className="form-label">Custom Scope Description</label>
                       <textarea
                         className="form-control"
                         rows="2"
-                        placeholder="Describe the scope of your AI governance assessment..."
-                        value={formData.scopeDescription}
-                        onChange={(e) => handleInputChange("scopeDescription", e.target.value)}
+                        placeholder="Provide detailed description of your scope..."
+                        value={formData.customScopeDescription}
+                        onChange={(e) => handleInputChange("customScopeDescription", e.target.value)}
                       ></textarea>
                     </div>
 
@@ -301,15 +306,15 @@ const AIGovernanceComplianceStep1 = () => {
                       <a href="#">Detailed Analysis / Audit</a>
                     </div>
 
-                    {/* Note */}
+                    {/* Additional Scope Details */}
                     <div className="mb-3">
-                      <label className="form-label">Note</label>
+                      <label className="form-label">Additional Scope Details</label>
                       <textarea
                         className="form-control"
                         rows="2"
-                        placeholder="Additional notes..."
-                        value={formData.note}
-                        onChange={(e) => handleInputChange("note", e.target.value)}
+                        placeholder="E.g., ai_model_architecture = Transformer chatbot with RAG, key_risks = bias, hallucination, data leakage..."
+                        value={formData.additionalDetails}
+                        onChange={(e) => handleInputChange("additionalDetails", e.target.value)}
                       ></textarea>
                     </div>
 

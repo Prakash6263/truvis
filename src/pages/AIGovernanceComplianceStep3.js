@@ -1,10 +1,10 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import Sidebar from "../components/Sidebar"
+import GovernanceSidebar from "../components/GovernanceSidebar"
 import TopBar from "../components/TopBar"
 import { Link, useNavigate } from "react-router-dom"
-import { runAuditReasoning, getAuditStatus, finalizeAudit } from "../api/audit"
+import { runComplianceReasoning } from "../api/governance"
 
 const AIGovernanceComplianceStep3 = () => {
   const [searchTerm, setSearchTerm] = useState("")
@@ -17,90 +17,70 @@ const AIGovernanceComplianceStep3 = () => {
   const navigate = useNavigate()
 
   useEffect(() => {
-    const auditId = localStorage.getItem("aiGovernanceAuditId")
-    if (!auditId) {
-      setError("Audit ID not found. Please start from step 1.")
+    const checkId = localStorage.getItem("governanceCheckId")
+    if (!checkId) {
+      setError("Check ID not found. Please start from step 1.")
       return
     }
 
     // Start the reasoning process
-    initializeAuditReasoning(auditId)
+    initializeGovernanceReasoning(checkId)
   }, [])
 
-  const initializeAuditReasoning = async (auditId) => {
+  const initializeGovernanceReasoning = async (checkId) => {
     setLoading(true)
     try {
-      console.log("[v0] Starting AI governance reasoning for:", auditId)
-      const response = await runAuditReasoning(auditId)
-      console.log("[v0] Reasoning started:", response)
+      console.log("[v0] STEP 3: Starting AI governance reasoning for check ID:", checkId)
+      const response = await runComplianceReasoning(checkId)
+      console.log("[v0] STEP 3: Reasoning response received:", response)
       
-      // Start polling for status
-      pollAuditStatus(auditId)
+      // Check if response has the proper structure (findings_preview and reasoning_steps directly)
+      if (response && response.status === "reasoning_completed") {
+        setAuditData(response)
+        
+        // Extract findings from findings_preview
+        if (response.findings_preview && Array.isArray(response.findings_preview)) {
+          setFindings(response.findings_preview)
+          console.log("[v0] STEP 3: Found", response.findings_preview.length, "findings")
+        }
+        
+        // Extract reasoning steps
+        if (response.reasoning_steps && Array.isArray(response.reasoning_steps)) {
+          setReasoningSteps(response.reasoning_steps)
+          console.log("[v0] STEP 3: Found", response.reasoning_steps.length, "reasoning steps")
+        }
+
+        // Store data for Step 4
+        localStorage.setItem("governanceReasoningData", JSON.stringify(response))
+        setProcessing(false)
+        setLoading(false)
+      } else {
+        setError("Unexpected response structure from governance reasoning. Please try again.")
+        setLoading(false)
+      }
     } catch (err) {
-      console.error("[v0] Error starting AI governance reasoning:", err)
+      console.error("[v0] STEP 3 FAILED: Error starting AI governance reasoning:", err)
       setError(err.response?.data?.detail || "Failed to start AI governance reasoning. Please try again.")
       setLoading(false)
     }
   }
 
-  const pollAuditStatus = (auditId) => {
-    const pollInterval = setInterval(async () => {
-      try {
-        const response = await getAuditStatus(auditId)
-        console.log("[v0] AI governance audit status:", response)
-
-        if (response.status === "completed") {
-          clearInterval(pollInterval)
-          setAuditData(response)
-          
-          // Extract findings
-          if (response.findings) {
-            setFindings(response.findings)
-          }
-          
-          // Extract reasoning steps
-          if (response.reasoning_steps) {
-            setReasoningSteps(response.reasoning_steps)
-          }
-
-          // Store data for Step 4
-          localStorage.setItem("aiGovernanceAuditResults", JSON.stringify(response))
-          setProcessing(false)
-          setLoading(false)
-        } else if (response.status === "processing") {
-          setProcessing(true)
-          setLoading(true)
-        } else if (response.status === "failed") {
-          clearInterval(pollInterval)
-          setError("AI governance analysis failed. Please try again.")
-          setLoading(false)
-          setProcessing(false)
-        }
-      } catch (err) {
-        console.error("[v0] Error polling AI governance audit status:", err)
-        // Continue polling even on error
-      }
-    }, 2000) // Poll every 2 seconds
-  }
-
   const handleSubmit = async (e) => {
     e.preventDefault()
     
-    const auditId = localStorage.getItem("aiGovernanceAuditId")
-    if (!auditId) {
-      setError("Audit ID not found. Please start from step 1.")
+    const checkId = localStorage.getItem("governanceCheckId")
+    if (!checkId) {
+      setError("Check ID not found. Please start from step 1.")
       return
     }
 
     try {
       setLoading(true)
-      console.log("[v0] Finalizing AI governance audit:", auditId)
-      await finalizeAudit(auditId)
-      console.log("[v0] AI governance audit finalized")
+      console.log("[v0] STEP 3: Proceeding to step 4 with check ID:", checkId)
       navigate("/ai-governance-compliance-step4")
     } catch (err) {
-      console.error("[v0] Error finalizing AI governance audit:", err)
-      setError(err.response?.data?.detail || "Failed to finalize AI governance audit. You can still proceed to view results.")
+      console.error("[v0] STEP 3 Error:", err)
+      setError(err.response?.data?.detail || "Failed to proceed. You can still proceed to view results.")
       setLoading(false)
     }
   }
@@ -210,7 +190,7 @@ const AIGovernanceComplianceStep3 = () => {
       `}</style>
 
       <main className="main">
-        <Sidebar />
+        <GovernanceSidebar />
 
         <div className="main2">
           <TopBar />
@@ -279,25 +259,50 @@ const AIGovernanceComplianceStep3 = () => {
                       <table className="table align-middle mb-0 table-sm">
                         <thead>
                           <tr>
-                            <th>Risk ID</th>
-                            <th>Risk Statement</th>
-                            <th>Severity</th>
-                            <th>Current Risk Level</th>
+                            <th>Finding ID</th>
+                            <th>Governance Area</th>
+                            <th>Compliance Status</th>
+                            <th>Risk Level</th>
                           </tr>
                         </thead>
                         <tbody>
                           {findings.map((finding, idx) => (
                             <tr key={idx}>
-                              <td>{finding.riskId}</td>
-                              <td style={{ fontSize: "12px" }}>{finding.riskStatement}</td>
+                              <td style={{ fontWeight: "bold" }}>{finding.findingId}</td>
+                              <td style={{ fontSize: "13px", fontWeight: "500" }}>{finding.area}</td>
                               <td>
-                                <span className={getSeverityBadge(finding.currentImpactLevel)}>
-                                  {finding.currentImpactLevel}
+                                <span
+                                  style={{
+                                    backgroundColor: finding.complianceStatus === "Compliant" ? "#28a745" : "#dc3545",
+                                    color: "white",
+                                    padding: "6px 12px",
+                                    borderRadius: "6px",
+                                    fontSize: "12px",
+                                    fontWeight: "500",
+                                  }}
+                                >
+                                  {finding.complianceStatus}
                                 </span>
                               </td>
                               <td>
-                                <span className={getSeverityBadge(finding.currentRiskLevel)}>
-                                  {finding.currentRiskLevel}
+                                <span
+                                  style={{
+                                    backgroundColor:
+                                      finding.riskLevel === "Critical"
+                                        ? "#d32f2f"
+                                        : finding.riskLevel === "High"
+                                          ? "#ff6f00"
+                                          : finding.riskLevel === "Medium"
+                                            ? "#ffc107"
+                                            : "#28a745",
+                                    color: finding.riskLevel === "Medium" ? "#333" : "white",
+                                    padding: "6px 12px",
+                                    borderRadius: "6px",
+                                    fontSize: "12px",
+                                    fontWeight: "500",
+                                  }}
+                                >
+                                  {finding.riskLevel}
                                 </span>
                               </td>
                             </tr>

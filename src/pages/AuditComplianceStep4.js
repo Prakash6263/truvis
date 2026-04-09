@@ -73,7 +73,7 @@ const AuditComplianceStep4 = () => {
     localStorage.removeItem("auditId")
     localStorage.removeItem("extractedPreview")
     localStorage.removeItem("auditResults")
-    navigate("/audit-compliance")
+    navigate("/dashboard")
   }
 
   const handleBack = () => {

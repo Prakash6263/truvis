@@ -1,36 +1,66 @@
 "use client"
 import { useEffect, useState } from "react"
-import AuditHistorySidebar from "../components/AuditHistorySidebar"
+import GovernanceSidebar from "../components/GovernanceSidebar"
 import TopBar from "../components/TopBar"
 import ChatInput from "../components/ChatInput"
 import { Link, useNavigate } from "react-router-dom"
-import { sendAuditChat, downloadAuditReport } from "../api/audit"
+import { getGovernanceCheck, submitGovernanceResults, downloadGovernanceReport, sendGovernanceChat } from "../api/governance"
 import Swal from "sweetalert2"
 
 const AIGovernanceComplianceStep4 = () => {
   const navigate = useNavigate()
-  const [auditResults, setAuditResults] = useState(null)
+  const [governanceResults, setGovernanceResults] = useState(null)
   const [error, setError] = useState("")
+  const [loading, setLoading] = useState(false)
   const [chatMessages, setChatMessages] = useState([])
   const [chatLoading, setChatLoading] = useState(false)
 
   useEffect(() => {
-    // Load audit results from localStorage
-    const results = localStorage.getItem("aiGovernanceAuditResults")
-    if (results) {
-      try {
-        setAuditResults(JSON.parse(results))
-      } catch (err) {
-        console.error("[v0] Error parsing AI governance audit results:", err)
-        setError("Failed to load AI governance audit results")
-      }
-    } else {
-      setError("AI governance audit results not found. Please complete the audit analysis.")
+    const checkId = localStorage.getItem("governanceCheckId")
+    if (!checkId) {
+      setError("Check ID not found. Please start from step 1.")
+      return
     }
+
+    // Fetch governance check results
+    fetchGovernanceResults(checkId)
   }, [])
 
+  const fetchGovernanceResults = async (checkId) => {
+    setLoading(true)
+    try {
+      console.log("[v0] STEP 4A: Fetching governance check results for check ID:", checkId)
+      const response = await getGovernanceCheck(checkId)
+      console.log("[v0] STEP 4A SUCCESS: Governance check results:", response)
+      
+      setGovernanceResults(response)
+      localStorage.setItem("governanceCheckResults", JSON.stringify(response))
+      
+      // Auto-submit results if status indicates it's complete
+      if (response.status === "completed" || response.overall_score) {
+        handleSubmitResults(checkId)
+      }
+    } catch (err) {
+      console.error("[v0] STEP 4A FAILED: Error fetching governance results:", err)
+      setError(err.response?.data?.detail || "Failed to load governance results. Please try again.")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSubmitResults = async (checkId) => {
+    try {
+      console.log("[v0] STEP 4B: Submitting governance results for check ID:", checkId)
+      const response = await submitGovernanceResults(checkId)
+      console.log("[v0] STEP 4B SUCCESS: Results submitted:", response)
+    } catch (err) {
+      console.error("[v0] STEP 4B FAILED: Error submitting results:", err)
+      // Don't stop the flow if submission fails
+    }
+  }
+
   const handleSendMessage = async (message) => {
-    if (!message.trim() || !auditResults?.audit_id) {
+    if (!message.trim()) {
       return
     }
 
@@ -41,26 +71,34 @@ const AIGovernanceComplianceStep4 = () => {
       const userMsg = { role: "user", content: message }
       setChatMessages((prev) => [...prev, userMsg])
 
-      // Send message to API
-      const response = await sendAuditChat(auditResults.audit_id, message)
+      // Get check ID from localStorage
+      const checkId = localStorage.getItem("governanceCheckId")
+      if (!checkId) {
+        throw new Error("Check ID not found")
+      }
+
+      // Send message to governance chat API
+      console.log("[v0] STEP 4 CHAT: Sending message:", message)
+      const response = await sendGovernanceChat(checkId, message)
+      console.log("[v0] STEP 4 CHAT: Response received:", response)
 
       // Add assistant response to chat
       const assistantMsg = {
         role: "assistant",
-        content: response.assistant_reply,
+        content: response.reply,
       }
       setChatMessages((prev) => [...prev, assistantMsg])
 
-      // Update remaining coins if needed
+      // Log remaining coins if available
       if (response.remaining_coins !== undefined) {
         console.log("[v0] Remaining coins:", response.remaining_coins)
       }
     } catch (err) {
-      console.error("[v0] Chat error:", err)
+      console.error("[v0] STEP 4 CHAT FAILED: Chat error:", err)
       Swal.fire({
         icon: "error",
         title: "Chat Error",
-        text: err.response?.data?.message || "Failed to send message. Please try again.",
+        text: err.response?.data?.detail || "Failed to send message. Please try again.",
         confirmButtonColor: "#dc3545",
       })
     } finally {
@@ -70,9 +108,11 @@ const AIGovernanceComplianceStep4 = () => {
 
   const handleNewAudit = () => {
     // Clear all stored data
-    localStorage.removeItem("aiGovernanceAuditId")
-    localStorage.removeItem("aiGovernanceExtractedPreview")
-    localStorage.removeItem("aiGovernanceAuditResults")
+    localStorage.removeItem("governanceCheckId")
+    localStorage.removeItem("governanceScope")
+    localStorage.removeItem("governanceUploadResponse")
+    localStorage.removeItem("governanceReasoningData")
+    localStorage.removeItem("governanceCheckResults")
     navigate("/dashboard")
   }
 
@@ -80,43 +120,57 @@ const AIGovernanceComplianceStep4 = () => {
     navigate("/ai-governance-compliance-step3")
   }
 
+  const handleRetry = async () => {
+    const checkId = localStorage.getItem("governanceCheckId")
+    if (checkId) {
+      await fetchGovernanceResults(checkId)
+    }
+  }
+
   const downloadReport = async () => {
-    if (!auditResults?.audit_id) return
+    const checkId = localStorage.getItem("governanceCheckId")
+    if (!checkId) return
 
     try {
-      const blob = await downloadAuditReport(auditResults.audit_id)
+      console.log("[v0] STEP 4C: Downloading governance report for check ID:", checkId)
+      const blob = await downloadGovernanceReport(checkId)
 
       const url = window.URL.createObjectURL(new Blob([blob]))
       const link = document.createElement("a")
       link.href = url
       link.setAttribute(
         "download",
-        `AI_Governance_Report_${auditResults.audit_id}.pdf`
+        `AI_Governance_Report_${checkId}.pdf`
       )
       document.body.appendChild(link)
       link.click()
       link.remove()
+      
+      console.log("[v0] STEP 4C SUCCESS: Report downloaded successfully")
     } catch (error) {
-      console.error("Download failed:", error)
+      console.error("[v0] STEP 4C FAILED: Download failed:", error)
       Swal.fire({
         icon: "error",
         title: "Download Failed",
-        text: "Unable to download AI governance report",
+        text: "Unable to download AI governance report. " + (error.response?.data?.detail || error.message),
       })
     }
   }
 
+  const getFindings = () => {
+    return governanceResults?.report?.results?.findings || []
+  }
+
   const getHighPriorityCount = () => {
-    return auditResults?.findings?.filter((f) => f.currentRiskLevel === "Critical" || f.currentRiskLevel === "High")
-      .length || 0
+    return getFindings().filter((f) => f.riskLevel === "Critical" || f.riskLevel === "High").length || 0
   }
 
   const getMediumPriorityCount = () => {
-    return auditResults?.findings?.filter((f) => f.currentRiskLevel === "Medium").length || 0
+    return getFindings().filter((f) => f.riskLevel === "Medium").length || 0
   }
 
   const getLowPriorityCount = () => {
-    return auditResults?.findings?.filter((f) => f.currentRiskLevel === "Low").length || 0
+    return getFindings().filter((f) => f.riskLevel === "Low").length || 0
   }
 
   return (
@@ -196,7 +250,7 @@ const AIGovernanceComplianceStep4 = () => {
       `}</style>
 
       <main className="main">
-        <AuditHistorySidebar />
+        <GovernanceSidebar />
 
         <div className="main2">
           <TopBar />
@@ -228,10 +282,18 @@ const AIGovernanceComplianceStep4 = () => {
                 <div className="alert alert-danger alert-dismissible fade show" role="alert">
                   {error}
                   <button type="button" className="btn-close" onClick={() => setError("")}></button>
+                  {loading && <button className="btn btn-sm btn-primary ms-2" onClick={handleRetry}>Retry</button>}
                 </div>
               )}
 
-              {auditResults && (
+              {loading && (
+                <div className="alert alert-info">
+                  <i className="fa fa-spinner fa-spin me-2"></i>
+                  Loading governance check results...
+                </div>
+              )}
+
+              {governanceResults && (
                 <>
                   {/* Completion Card */}
                   <div className="completion-card">
@@ -246,7 +308,7 @@ const AIGovernanceComplianceStep4 = () => {
                   {/* Overview */}
                   <div className="summary-card">
                     <h6 className="text-dark">Assessment Overview</h6>
-                    <p className="text-dark">{auditResults.overview}</p>
+                    <p className="text-dark">{governanceResults.report?.results?.overall_summary || governanceResults.overall_summary || "AI governance assessment completed."}</p>
                   </div>
 
                   {/* Summary Card */}
@@ -254,13 +316,23 @@ const AIGovernanceComplianceStep4 = () => {
                     <h5 className="text-dark mb-4">Assessment Summary</h5>
 
                     <div className="metric-item">
-                      <span>Audit ID:</span>
-                      <span className="metric-value" style={{ fontSize: "11px" }}>{auditResults.audit_id}</span>
+                      <span>Check ID:</span>
+                      <span className="metric-value" style={{ fontSize: "11px" }}>{governanceResults.check_id || governanceResults.report?.check_id}</span>
+                    </div>
+
+                    <div className="metric-item">
+                      <span>Compliance Scope:</span>
+                      <span className="metric-value">{governanceResults.compliance_scope || governanceResults.report?.scope?.compliance_scope}</span>
+                    </div>
+
+                    <div className="metric-item">
+                      <span>Overall Compliance Score:</span>
+                      <span className="metric-value">{governanceResults.report?.results?.overall_compliance_score || governanceResults.overall_score}%</span>
                     </div>
 
                     <div className="metric-item">
                       <span>Total Findings:</span>
-                      <span className="metric-value">{auditResults.findings?.length || 0}</span>
+                      <span className="metric-value">{getFindings().length}</span>
                     </div>
 
                     <div className="metric-item">
@@ -280,71 +352,128 @@ const AIGovernanceComplianceStep4 = () => {
                   </div>
 
                   {/* Detailed Findings */}
-                  {auditResults.findings && auditResults.findings.length > 0 && (
+                  {getFindings().length > 0 && (
                     <div className="summary-card">
                       <h6 className="text-dark mb-3">Detailed Findings</h6>
                       <div className="table-responsive">
                         <table className="table table-sm table-hover">
                           <thead>
                             <tr>
-                              <th>Risk ID</th>
-                              <th>Risk Statement</th>
-                              <th>Severity</th>
-                              <th>Risk Level</th>
+                              <th style={{ fontWeight: "600" }}>Finding ID</th>
+                              <th style={{ fontWeight: "600" }}>Governance Area</th>
+                              <th style={{ fontWeight: "600" }}>Compliance Status</th>
+                              <th style={{ fontWeight: "600" }}>Risk Level</th>
                             </tr>
                           </thead>
                           <tbody>
-                            {auditResults.findings.map((finding, idx) => (
-                              <tr key={idx}>
-                                <td>{finding.riskId}</td>
-                                <td style={{ fontSize: "12px" }}>{finding.riskStatement}</td>
+                            {getFindings().map((finding, idx) => (
+                              <tr key={idx} style={{ borderBottom: "1px solid #e0e0e0" }}>
+                                <td style={{ fontWeight: "bold", color: "#2ed2c9" }}>{finding.findingId}</td>
+                                <td style={{ fontSize: "13px", fontWeight: "500" }}>{finding.area}</td>
                                 <td>
                                   <span
                                     style={{
                                       backgroundColor:
-                                        finding.currentImpactLevel === "High"
-                                          ? "#ff4d4d"
-                                          : finding.currentImpactLevel === "Critical"
-                                            ? "#d32f2f"
-                                            : "#ffc107",
-                                      color: finding.currentImpactLevel === "High" || finding.currentImpactLevel === "Critical" ? "white" : "#333",
-                                      padding: "4px 8px",
-                                      borderRadius: "4px",
-                                      fontSize: "11px",
+                                        finding.complianceStatus === "Compliant"
+                                          ? "#28a745"
+                                          : "#dc3545",
+                                      color: "white",
+                                      padding: "6px 12px",
+                                      borderRadius: "6px",
+                                      fontSize: "12px",
+                                      fontWeight: "500",
                                     }}
                                   >
-                                    {finding.currentImpactLevel}
+                                    {finding.complianceStatus}
                                   </span>
                                 </td>
                                 <td>
                                   <span
                                     style={{
                                       backgroundColor:
-                                        finding.currentRiskLevel === "Critical"
+                                        finding.riskLevel === "Critical"
                                           ? "#d32f2f"
-                                          : finding.currentRiskLevel === "High"
-                                            ? "#ff4d4d"
-                                            : finding.currentRiskLevel === "Medium"
+                                          : finding.riskLevel === "High"
+                                            ? "#ff6f00"
+                                            : finding.riskLevel === "Medium"
                                               ? "#ffc107"
                                               : "#28a745",
-                                      color:
-                                        finding.currentRiskLevel === "Critical" ||
-                                        finding.currentRiskLevel === "High" ||
-                                        finding.currentRiskLevel === "Medium"
-                                          ? "#fff"
-                                          : "#fff",
-                                      padding: "4px 8px",
-                                      borderRadius: "4px",
-                                      fontSize: "11px",
+                                      color: finding.riskLevel === "Medium" ? "#333" : "white",
+                                      padding: "6px 12px",
+                                      borderRadius: "6px",
+                                      fontSize: "12px",
+                                      fontWeight: "500",
                                     }}
                                   >
-                                    {finding.currentRiskLevel}
+                                    {finding.riskLevel}
                                   </span>
                                 </td>
                               </tr>
                             ))}
                           </tbody>
                         </table>
+                      </div>
+                      
+                      {/* Detailed Recommendations Section */}
+                      <div className="mt-4">
+                        <h6 className="text-dark mb-3">Detailed Recommendations</h6>
+                        {getFindings().map((finding, idx) => (
+                          <div key={idx} style={{ marginBottom: "20px", paddingBottom: "15px", borderBottom: "1px solid #e0e0e0" }}>
+                            <div style={{ display: "flex", alignItems: "center", marginBottom: "10px" }}>
+                              <span style={{ fontWeight: "bold", color: "#2ed2c9", marginRight: "10px" }}>
+                                Finding {finding.findingId}:
+                              </span>
+                              <span style={{ fontWeight: "600", color: "#333" }}>{finding.area}</span>
+                            </div>
+                            
+                            <div style={{ marginBottom: "8px" }}>
+                              <strong style={{ color: "#555" }}>Gap Description:</strong>
+                              <p style={{ margin: "5px 0", fontSize: "13px", color: "#666", marginLeft: "10px" }}>
+                                {finding.gapDescription}
+                              </p>
+                            </div>
+                            
+                            <div style={{ marginBottom: "8px" }}>
+                              <strong style={{ color: "#555" }}>Recommendation:</strong>
+                              <p style={{ margin: "5px 0", fontSize: "13px", color: "#2ed2c9", marginLeft: "10px", fontWeight: "500" }}>
+                                {finding.recommendation}
+                              </p>
+                            </div>
+                            
+                            <div style={{ marginBottom: "8px" }}>
+                              <strong style={{ color: "#555" }}>Risk Justification:</strong>
+                              <p style={{ margin: "5px 0", fontSize: "13px", color: "#666", marginLeft: "10px" }}>
+                                {finding.riskJustification}
+                              </p>
+                            </div>
+                            
+                            {finding.referenceStandards && finding.referenceStandards.length > 0 && (
+                              <div>
+                                <strong style={{ color: "#555" }}>Reference Standards:</strong>
+                                <div style={{ margin: "5px 0", marginLeft: "10px" }}>
+                                  {finding.referenceStandards.map((standard, sidx) => (
+                                    <span
+                                      key={sidx}
+                                      style={{
+                                        display: "inline-block",
+                                        backgroundColor: "#f0f0f0",
+                                        color: "#333",
+                                        padding: "4px 10px",
+                                        borderRadius: "4px",
+                                        fontSize: "12px",
+                                        marginRight: "8px",
+                                        marginBottom: "5px",
+                                        border: "1px solid #ddd",
+                                      }}
+                                    >
+                                      {standard}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ))}
                       </div>
                     </div>
                   )}
@@ -425,8 +554,8 @@ const AIGovernanceComplianceStep4 = () => {
         </div>
 
         {/* Chat Input at bottom */}
-        {auditResults && (
-          <ChatInput onSendMessage={handleSendMessage} disabled={chatLoading || !auditResults} />
+        {governanceResults && (
+          <ChatInput onSendMessage={handleSendMessage} disabled={chatLoading || !governanceResults} />
         )}
       </main>
     </>

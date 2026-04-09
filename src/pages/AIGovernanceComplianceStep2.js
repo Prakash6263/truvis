@@ -1,24 +1,29 @@
 "use client"
 
 import { useState, useRef } from "react"
-import AuditHistorySidebar from "../components/AuditHistorySidebar"
+import GovernanceSidebar from "../components/GovernanceSidebar"
 import TopBar from "../components/TopBar"
 import { Link, useNavigate } from "react-router-dom"
-import { uploadAuditDocuments } from "../api/audit"
+import { uploadGovernanceDocuments } from "../api/governance"
 
 const AIGovernanceComplianceStep2 = () => {
   const [formData, setFormData] = useState({
-    complianceDescription: "",
-    additionalInfo: "",
+    aiModelArchitecture: "",
+    keyRisks: "",
+    additionalFreeText: "",
   })
   const [files, setFiles] = useState({
-    aiPolicy: null,
-    riskAssessment: null,
+    sop: null,
+    systemBrd: null,
+    lastAuditReport: null,
+    extraDocument: null,
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
-  const aiPolicyInputRef = useRef(null)
-  const riskAssessmentInputRef = useRef(null)
+  const sopInputRef = useRef(null)
+  const systemBrdInputRef = useRef(null)
+  const lastAuditReportInputRef = useRef(null)
+  const extraDocumentInputRef = useRef(null)
   const navigate = useNavigate()
 
   const handleInputChange = (field, value) => {
@@ -45,41 +50,54 @@ const AIGovernanceComplianceStep2 = () => {
     e.preventDefault()
 
     // Validation
-    if (!formData.complianceDescription.trim()) {
-      setError("Please describe current AI governance practices")
+    if (!formData.aiModelArchitecture.trim()) {
+      setError("Please describe AI model architecture")
       return
     }
-    if (!files.aiPolicy) {
-      setError("Please upload AI Policy/Framework")
+    if (!formData.keyRisks.trim()) {
+      setError("Please describe key risks")
       return
     }
-    if (!files.riskAssessment) {
-      setError("Please upload AI Risk Assessment")
+    if (!files.sop && !files.systemBrd) {
+      setError("Please upload at least one document (SOP or System BRD)")
       return
     }
 
     setLoading(true)
     try {
-      const auditId = localStorage.getItem("aiGovernanceAuditId")
-      if (!auditId) {
-        setError("Audit ID not found. Please start from step 1.")
+      const checkId = localStorage.getItem("governanceCheckId")
+      if (!checkId) {
+        setError("Check ID not found. Please start from step 1.")
         return
       }
 
       const formDataPayload = new FormData()
-      formDataPayload.append("compliance_description", formData.complianceDescription)
-      formDataPayload.append("sop", files.aiPolicy, files.aiPolicy.name)
-      formDataPayload.append("last_audit", files.riskAssessment, files.riskAssessment.name)
-      formDataPayload.append("additional_info", formData.additionalInfo)
+      formDataPayload.append("ai_model_architecture", formData.aiModelArchitecture)
+      formDataPayload.append("key_risks", formData.keyRisks)
+      
+      // Append files
+      if (files.sop) {
+        formDataPayload.append("sop", files.sop, files.sop.name)
+      }
+      if (files.systemBrd) {
+        formDataPayload.append("system_brd", files.systemBrd, files.systemBrd.name)
+      }
+      if (files.lastAuditReport) {
+        formDataPayload.append("last_audit_report", files.lastAuditReport, files.lastAuditReport.name)
+      }
+      
+      formDataPayload.append("additional_free_text", formData.additionalFreeText || "")
+      
+      if (files.extraDocument) {
+        formDataPayload.append("extra_document", files.extraDocument, files.extraDocument.name)
+      }
 
-      console.log("[v0] Uploading AI governance documents for audit:", auditId)
-      const response = await uploadAuditDocuments(auditId, formDataPayload)
+      console.log("[v0] Uploading AI governance documents for check ID:", checkId)
+      const response = await uploadGovernanceDocuments(checkId, formDataPayload)
       console.log("[v0] AI governance documents uploaded:", response)
 
-      // Store the extracted preview for display in step 3
-      if (response.extracted_preview) {
-        localStorage.setItem("aiGovernanceExtractedPreview", response.extracted_preview)
-      }
+      // Store the upload response data for next step
+      localStorage.setItem("governanceUploadResponse", JSON.stringify(response))
 
       navigate("/ai-governance-compliance-step3")
     } catch (err) {
@@ -176,7 +194,7 @@ const AIGovernanceComplianceStep2 = () => {
       `}</style>
 
       <main className="main">
-        <AuditHistorySidebar />
+        <GovernanceSidebar />
 
         <div className="main2">
           <TopBar />
@@ -221,78 +239,140 @@ const AIGovernanceComplianceStep2 = () => {
                   <div className="section-title">Required Documents</div>
 
                   <form onSubmit={handleSubmit}>
-                    {/* Compliance Description */}
+                    {/* AI Model Architecture */}
                     <div className="mb-4">
-                      <label className="form-label required">Describe current AI governance practices</label>
+                      <label className="form-label required">AI Model Architecture</label>
                       <textarea
                         className="form-control"
                         rows="3"
-                        value={formData.complianceDescription}
-                        onChange={(e) => handleInputChange("complianceDescription", e.target.value)}
-                        placeholder="Describe your organization's current AI governance practices and frameworks..."
+                        value={formData.aiModelArchitecture}
+                        onChange={(e) => handleInputChange("aiModelArchitecture", e.target.value)}
+                        placeholder="E.g., Transformer chatbot with RAG, LLM-based system, etc."
                       ></textarea>
                     </div>
 
-                    {/* AI Policy Upload */}
+                    {/* Key Risks */}
                     <div className="mb-4">
-                      <label className="form-label required">Upload AI Policy/Framework</label>
+                      <label className="form-label required">Key Risks</label>
+                      <textarea
+                        className="form-control"
+                        rows="3"
+                        value={formData.keyRisks}
+                        onChange={(e) => handleInputChange("keyRisks", e.target.value)}
+                        placeholder="E.g., bias, hallucination, data leakage, etc."
+                      ></textarea>
+                    </div>
+
+                    {/* SOP Upload */}
+                    <div className="mb-4">
+                      <label className="form-label">Upload SOP (Standard Operating Procedure)</label>
                       <div 
                         className="upload-box"
-                        onClick={() => aiPolicyInputRef.current?.click()}
+                        onClick={() => sopInputRef.current?.click()}
                         style={{ cursor: "pointer" }}
                       >
-                        {files.aiPolicy ? (
-                          <span style={{ color: "#2ed2c9", fontWeight: "bold" }}>✓ {files.aiPolicy.name}</span>
+                        {files.sop ? (
+                          <span style={{ color: "#2ed2c9", fontWeight: "bold" }}>✓ {files.sop.name}</span>
                         ) : (
-                          "Drag & drop or click to upload (Max 1MB, PDF, DOCX, XLSX)"
+                          "Drag & drop or click to upload (Max 1MB, PDF)"
                         )}
                       </div>
                       <input
-                        ref={aiPolicyInputRef}
+                        ref={sopInputRef}
                         type="file"
                         className="form-control"
                         style={{ display: "none" }}
-                        accept=".pdf,.docx,.xlsx,.doc,.xls"
-                        onChange={(e) => handleFileChange("aiPolicy", e.target.files?.[0])}
+                        accept=".pdf,.doc,.docx"
+                        onChange={(e) => handleFileChange("sop", e.target.files?.[0])}
                       />
-                      <div className="hint-text">e.g., AI Policy Framework, AI Ethics Guidelines</div>
+                      <div className="hint-text">e.g., sop.pdf</div>
                     </div>
 
-                    {/* Risk Assessment Upload */}
+                    {/* System BRD Upload */}
                     <div className="mb-4">
-                      <label className="form-label required">Upload AI Risk Assessment</label>
+                      <label className="form-label">Upload System BRD (Business Requirements Document)</label>
                       <div 
                         className="upload-box"
-                        onClick={() => riskAssessmentInputRef.current?.click()}
+                        onClick={() => systemBrdInputRef.current?.click()}
                         style={{ cursor: "pointer" }}
                       >
-                        {files.riskAssessment ? (
-                          <span style={{ color: "#2ed2c9", fontWeight: "bold" }}>✓ {files.riskAssessment.name}</span>
+                        {files.systemBrd ? (
+                          <span style={{ color: "#2ed2c9", fontWeight: "bold" }}>✓ {files.systemBrd.name}</span>
                         ) : (
-                          "Drag & drop or click to upload (Max 1MB, PDF, DOCX, XLSX)"
+                          "Drag & drop or click to upload (Max 1MB, PDF)"
                         )}
                       </div>
                       <input
-                        ref={riskAssessmentInputRef}
+                        ref={systemBrdInputRef}
                         type="file"
                         className="form-control"
                         style={{ display: "none" }}
-                        accept=".pdf,.docx,.xlsx,.doc,.xls"
-                        onChange={(e) => handleFileChange("riskAssessment", e.target.files?.[0])}
+                        accept=".pdf,.doc,.docx"
+                        onChange={(e) => handleFileChange("systemBrd", e.target.files?.[0])}
                       />
-                      <div className="hint-text">e.g., AI Risk Assessment Report, Model Governance Documentation</div>
+                      <div className="hint-text">e.g., brd.pdf</div>
                     </div>
 
-                    {/* Additional Information */}
+                    {/* Last Audit Report Upload */}
+                    <div className="mb-4">
+                      <label className="form-label">Upload Last Audit Report</label>
+                      <div 
+                        className="upload-box"
+                        onClick={() => lastAuditReportInputRef.current?.click()}
+                        style={{ cursor: "pointer" }}
+                      >
+                        {files.lastAuditReport ? (
+                          <span style={{ color: "#2ed2c9", fontWeight: "bold" }}>✓ {files.lastAuditReport.name}</span>
+                        ) : (
+                          "Drag & drop or click to upload (Max 1MB, PDF)"
+                        )}
+                      </div>
+                      <input
+                        ref={lastAuditReportInputRef}
+                        type="file"
+                        className="form-control"
+                        style={{ display: "none" }}
+                        accept=".pdf,.doc,.docx"
+                        onChange={(e) => handleFileChange("lastAuditReport", e.target.files?.[0])}
+                      />
+                      <div className="hint-text">e.g., audit_report.pdf (Optional)</div>
+                    </div>
+
+                    {/* Additional Free Text */}
                     <div className="mb-4">
                       <label className="form-label">Additional Information</label>
                       <textarea
                         className="form-control"
                         rows="2"
-                        value={formData.additionalInfo}
-                        onChange={(e) => handleInputChange("additionalInfo", e.target.value)}
-                        placeholder="Any additional information to help with the AI governance assessment..."
+                        value={formData.additionalFreeText}
+                        onChange={(e) => handleInputChange("additionalFreeText", e.target.value)}
+                        placeholder="Any additional information or notes..."
                       ></textarea>
+                    </div>
+
+                    {/* Extra Document Upload */}
+                    <div className="mb-4">
+                      <label className="form-label">Extra Document</label>
+                      <div 
+                        className="upload-box"
+                        onClick={() => extraDocumentInputRef.current?.click()}
+                        style={{ cursor: "pointer" }}
+                      >
+                        {files.extraDocument ? (
+                          <span style={{ color: "#2ed2c9", fontWeight: "bold" }}>✓ {files.extraDocument.name}</span>
+                        ) : (
+                          "Drag & drop or click to upload (Max 1MB, PDF)"
+                        )}
+                      </div>
+                      <input
+                        ref={extraDocumentInputRef}
+                        type="file"
+                        className="form-control"
+                        style={{ display: "none" }}
+                        accept=".pdf,.doc,.docx"
+                        onChange={(e) => handleFileChange("extraDocument", e.target.files?.[0])}
+                      />
+                      <div className="hint-text">e.g., additional_doc.pdf (Optional)</div>
                     </div>
 
                     {/* Buttons */}

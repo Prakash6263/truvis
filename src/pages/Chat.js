@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import Preloader from "../components/Preloader"
 import ChatInput from "../components/ChatInput"
-import Sidebar from "../components/Sidebar"
+import Sidebar from "../components/AccountSidebar"
 import TopBar from "../components/TopBar"
 
 const Chat = () => {
@@ -109,7 +109,7 @@ const Chat = () => {
             </div>
           </div>
         </div>
-<ChatInput onSendMessage={handleSendMessage}/>
+{/* <ChatInput onSendMessage={handleSendMessage}/> */}
         {/* <div className="chat-input">
           <form onSubmit={handleSendMessage} className="d-flex align-items-center">
             <input

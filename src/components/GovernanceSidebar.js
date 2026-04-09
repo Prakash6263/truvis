@@ -2,39 +2,41 @@ import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import Swal from "sweetalert2"
 import { logout } from "../utils/auth"
-import { getAuditHistory } from "../api/audit"
+import { getPastGovernanceReports } from "../api/governance"
 
-const AuditHistorySidebar = ({
+const GovernanceSidebar = ({
   isCollapsed,
   onToggle,
 }) => {
   const navigate = useNavigate()
-  const [audits, setAudits] = useState([])
+  const [reports, setReports] = useState([])
   const [loading, setLoading] = useState(true)
-  const [showAllAudits, setShowAllAudits] = useState(false)
+  const [showAllReports, setShowAllReports] = useState(false)
 
   useEffect(() => {
-    fetchAuditHistory()
+    fetchGovernanceHistory()
   }, [])
 
-  const fetchAuditHistory = async () => {
+  const fetchGovernanceHistory = async () => {
     try {
       setLoading(true)
-      const response = await getAuditHistory()
-      setAudits(response.audits || [])
-      console.log("[v0] Audit history fetched:", response.audits)
+      const response = await getPastGovernanceReports()
+      // Handle both format possibilities
+      const reportsList = response.reports || response.data || []
+      setReports(reportsList)
+      console.log("[v0] Governance history fetched:", reportsList)
     } catch (error) {
-      console.error("[v0] Failed to fetch audit history:", error)
-      setAudits([])
+      console.error("[v0] Failed to fetch governance history:", error)
+      setReports([])
     } finally {
       setLoading(false)
     }
   }
 
-  const handleAuditClick = (auditId) => {
-    // Store selected audit ID and navigate to audit detail view
-    localStorage.setItem("selectedAuditId", auditId)
-    navigate(`/audit-detail/${auditId}`)
+  const handleReportClick = (checkId) => {
+    // Store selected check ID and navigate to governance detail view
+    localStorage.setItem("selectedGovernanceCheckId", checkId)
+    navigate(`/governance-detail/${checkId}`)
   }
 
   const handleLogout = () => {
@@ -70,29 +72,29 @@ const AuditHistorySidebar = ({
       <div className="d-flex justify-content-between">
         <button 
           className="theme-btn mb-3 w-100 btn btn-primary me-2" 
-          onClick={() => navigate("/dashboard")}
+          onClick={() => navigate("/ai-governance-compliance-step1")}
         >
-          + New Audit
+          + New Governance
         </button>
         <a>
           <img src="/assets/img/search.png" alt="search" />
         </a>
       </div>
 
-      {/* Audit History Section */}
+      {/* Governance History Section */}
       <div style={{ marginBottom: "20px" }}>
         <div style={{ fontSize: "14px", fontWeight: "600", marginBottom: "10px", color: "#666" }}>
-          Audit History
+          Governance History
         </div>
         <ul className="chat-list">
           {loading ? (
-            <li style={{ padding: "10px", fontSize: "12px" }}>Loading audits...</li>
-          ) : audits.length > 0 ? (
+            <li style={{ padding: "10px", fontSize: "12px" }}>Loading governance reports...</li>
+          ) : reports.length > 0 ? (
             <>
-              {(showAllAudits ? audits : audits.slice(0, 5)).map((audit) => (
+              {(showAllReports ? reports : reports.slice(0, 5)).map((report) => (
                 <li
-                  key={audit.audit_id}
-                  onClick={() => handleAuditClick(audit.audit_id)}
+                  key={report.check_id}
+                  onClick={() => handleReportClick(report.check_id)}
                   style={{ 
                     cursor: "pointer",
                     padding: "10px",
@@ -105,17 +107,17 @@ const AuditHistorySidebar = ({
                   <img 
                     src="/assets/img/chaticon.png" 
                     style={{ width: "16px", marginRight: "8px", display: "inline-block" }} 
-                    alt="audit" 
+                    alt="governance" 
                   />
                   <span style={{ fontSize: "12px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "inline-block", maxWidth: "180px" }}>
-                    {audit.scope?.audit_type || "Audit"}
+                    {report.scope?.compliance_scope || "Governance Report"}
                   </span>
                 </li>
               ))}
-              {audits.length > 5 && (
+              {reports.length > 5 && (
                 <li style={{ padding: "10px", textAlign: "center" }}>
                   <button
-                    onClick={() => setShowAllAudits(!showAllAudits)}
+                    onClick={() => setShowAllReports(!showAllReports)}
                     style={{
                       background: "none",
                       border: "none",
@@ -126,13 +128,13 @@ const AuditHistorySidebar = ({
                       textDecoration: "underline",
                     }}
                   >
-                    {showAllAudits ? "Show Less" : `View All (${audits.length})`}
+                    {showAllReports ? "Show Less" : `View All (${reports.length})`}
                   </button>
                 </li>
               )}
             </>
           ) : (
-            <li style={{ padding: "10px", fontSize: "12px", color: "#999" }}>No audits yet</li>
+            <li style={{ padding: "10px", fontSize: "12px", color: "#999" }}>No governance reports yet</li>
           )}
         </ul>
       </div>
@@ -144,4 +146,4 @@ const AuditHistorySidebar = ({
   )
 }
 
-export default AuditHistorySidebar
+export default GovernanceSidebar

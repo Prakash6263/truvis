@@ -85,7 +85,7 @@ const AuditComplianceStep1 = () => {
   }
 
   const handleCancel = () => {
-    navigate("/audit-compliance")
+    navigate("/dashboard")
   }
 
   return (
@@ -147,7 +147,7 @@ const AuditComplianceStep1 = () => {
             {/* Step Header */}
             <div className="container text-center">
               <div className="d-flex justify-content-between align-items-center mt-5">
-                <Link to="/audit-compliance" className="btn btn-outline-secondary btn-nav">
+                <Link to="/dashboard" className="btn btn-outline-secondary btn-nav">
                   ← Back
                 </Link>
                 <div>
