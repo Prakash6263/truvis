@@ -57,7 +57,7 @@ const Signup = () => {
         })
 
         // Redirect to dashboard
-        navigate("/ai-compliance")
+        navigate("/dashboard")
       } else {
         // Show error message
         await Swal.fire({

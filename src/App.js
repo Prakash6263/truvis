@@ -1,11 +1,15 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import About from "./pages/About";
-import AICompliance from "./pages/AICompliance";
-import AuditCompliance from "./pages/AuditCompliance";
+// import AICompliance from "./pages/AICompliance";
+
 import AuditComplianceStep1 from "./pages/AuditComplianceStep1";
 import AuditComplianceStep2 from "./pages/AuditComplianceStep2";
 import AuditComplianceStep3 from "./pages/AuditComplianceStep3";
 import AuditComplianceStep4 from "./pages/AuditComplianceStep4";
+import AIGovernanceComplianceStep1 from "./pages/AIGovernanceComplianceStep1";
+import AIGovernanceComplianceStep2 from "./pages/AIGovernanceComplianceStep2";
+import AIGovernanceComplianceStep3 from "./pages/AIGovernanceComplianceStep3";
+import AIGovernanceComplianceStep4 from "./pages/AIGovernanceComplianceStep4";
 import AuditDetail from "./pages/AuditDetail";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
@@ -64,22 +68,15 @@ function App() {
           <Route path="/disclaimer" element={<Disclaimer />} />
           <Route path="/terms" element={<Terms />} />
 
-          <Route
+          {/* <Route
             path="/ai-compliance"
             element={
               <ProtectedRoute>
                 <AICompliance />
               </ProtectedRoute>
             }
-          />
-          <Route
-            path="/audit-compliance"
-            element={
-              <ProtectedRoute>
-                <AuditCompliance />
-              </ProtectedRoute>
-            }
-          />
+          /> */}
+
           <Route
             path="/audit-compliance-step1"
             element={
@@ -117,6 +114,38 @@ function App() {
             element={
               <ProtectedRoute>
                 <AuditDetail />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/ai-governance-compliance-step1"
+            element={
+              <ProtectedRoute>
+                <AIGovernanceComplianceStep1 />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/ai-governance-compliance-step2"
+            element={
+              <ProtectedRoute>
+                <AIGovernanceComplianceStep2 />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/ai-governance-compliance-step3"
+            element={
+              <ProtectedRoute>
+                <AIGovernanceComplianceStep3 />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/ai-governance-compliance-step4"
+            element={
+              <ProtectedRoute>
+                <AIGovernanceComplianceStep4 />
               </ProtectedRoute>
             }
           />
