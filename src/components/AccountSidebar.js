@@ -3,9 +3,10 @@ import { useNavigate } from "react-router-dom"
 export default function Sidebar({ collapsed, onToggle }) {
   const navigate = useNavigate()
 
-  const handleNavigateHome = () => {
-    navigate("/dashboard")
+  const handleNavigate = (path) => {
+    navigate(path)
   }
+
   return (
     <>
       {!collapsed && (
@@ -47,26 +48,20 @@ export default function Sidebar({ collapsed, onToggle }) {
         </div>
 
         <ul className="chat-list">
-          <li onClick={handleNavigateHome} style={{ cursor: "pointer" }}>
+          <li onClick={() => handleNavigate("/dashboard")} style={{ cursor: "pointer" }}>
             <img src="assets/icons/icons/default.png" style={{ width: 20, marginRight: 10 }}/> Dashboard
           </li>
-          <li>
-            <img src="assets/icons/icons/chart.png" style={{ width: 20, marginRight: 10 }} /> Accountancy Audit{" "}
+          <li onClick={() => handleNavigate("/risk-management")} style={{ cursor: "pointer" }}>
+            <img src="assets/img/chaticon.png" style={{ width: 20, marginRight: 10 }} /> Risk Management
           </li>
-          <li>
-            <img src="assets/icons/icons/card.png" style={{ width: 20, marginRight: 10 }} /> Monetization
+          <li onClick={() => handleNavigate("/audit-compliance-step1")} style={{ cursor: "pointer" }}>
+            <img src="assets/img/chaticon.png" style={{ width: 20, marginRight: 10 }} /> Audit 
           </li>
-          <li>
-            <img src="assets/icons/icons/repair.png" style={{ width: 20, marginRight: 10 }} /> Ai Report
+          <li onClick={() => handleNavigate("/ai-governance-compliance-step1")} style={{ cursor: "pointer" }}>
+            <img src="assets/img/chaticon.png" style={{ width: 20, marginRight: 10 }} /> AI Governance 
           </li>
-        </ul>
-        <h6 className="mb-2">Risk Management</h6>
-        <ul className="chat-list">
-          <li>
-            <img src="assets/icons/icons/person.png" style={{ width: 20, marginRight: 10 }} /> Attack Simulation Mode
-          </li>
-          <li className="active">
-            <i className="fa fa-file" style={{ color: "#3ac6bd", marginRight: 10 }} /> Ai Risk Compliances
+          <li onClick={() => handleNavigate("/plans")} style={{ cursor: "pointer" }}>
+            <img src="assets/img/chaticon.png" style={{ width: 20, marginRight: 10 }} /> Plans
           </li>
         </ul>
       </div>
